@@ -17,17 +17,6 @@ using LiteralExprPtr = std::unique_ptr<LiteralExpr>;
 // Using variant + visit instead of dynamic polymorphism (visitor pattern)
 using ExprNodePtr = std::variant<BinaryExprPtr, LiteralExprPtr>;
 
-// Helper method to create an Expression node as a variant
-// Using template so I don't need to make a new function for every expression node
-// E.g createBinaryExpr, createLiteralExpr etc.
-template <typename T>
-concept ExprType = std::same_as<T, BinaryExpr> || std::same_as<T, LiteralExpr>;
-
-template <ExprType T, typename... Args>
-ExprNodePtr createExprNode(Args... args) {
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
 ///////////////////////
 // NODE DECLARATIONS //
 ///////////////////////
@@ -45,3 +34,14 @@ struct LiteralExpr {
 
     LiteralExpr(LiteralValue& value);
 };
+
+// Helper method to create an Expression node as a variant
+// Using template so I don't need to make a new function for every expression node
+// E.g createBinaryExpr, createLiteralExpr etc.
+template <typename T>
+concept ExprType = std::same_as<T, BinaryExpr> || std::same_as<T, LiteralExpr>;
+
+template <ExprType T, typename... Args>
+ExprNodePtr createNode(Args... args) {
+    return std::make_unique<T>(std::forward<Args>(args)...);
+}
