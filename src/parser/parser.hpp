@@ -21,9 +21,11 @@ class Parser {
   private:
     // Parsing statements
 
+    StmtNodePtr parseDeclaration();
+
     StmtNodePtr parseStmt();
 
-    ReturnStmtPtr parseReturnStmt();
+    StmtNodePtr parseReturnStmt();
 
     IfStmtPtr parseIfStmt();
 
@@ -40,6 +42,8 @@ class Parser {
 
     bool match(std::initializer_list<Token>& exepectedTypes);
 
+    void consume(TokenType expected, std::string_view errorMessage);
+
     // Return current token and consume it
     Token& advance();
 
@@ -49,7 +53,13 @@ class Parser {
     // Return current token without consuming
     const Token& peek() const;
 
+    const Token& peekNext() const;
+
     bool isatEnd() const;
 
     void synchronize();
+};
+
+struct ParseError : public std::runtime_error {
+    ParseError();
 };
