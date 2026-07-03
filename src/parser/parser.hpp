@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../lexer/Token.hpp"
-#include "Expr.hpp"
-#include "Stmt.hpp"
+#include "Ast/Expr.hpp"
+#include "Ast/Stmt.hpp"
 
 #include <vector>
 
@@ -23,6 +23,10 @@ class Parser {
 
     StmtNodePtr parseDeclaration();
 
+    StmtNodePtr parseFunctionDecl();
+
+    StmtNodePtr parseVariableDecl();
+
     StmtNodePtr parseStmt();
 
     StmtNodePtr parseReturnStmt();
@@ -42,7 +46,9 @@ class Parser {
 
     bool match(std::initializer_list<Token>& exepectedTypes);
 
-    void consume(TokenType expected, std::string_view errorMessage);
+    bool check(TokenType expected) const;
+
+    Token& consume(TokenType expected, std::string_view errorMessage);
 
     // Return current token and consume it
     Token& advance();

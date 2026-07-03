@@ -14,12 +14,24 @@ std::vector<StmtNodePtr> Parser::Parse() {
 StmtNodePtr Parser::parseDeclaration() {
 
     if (match(TokenType::INT)) {
-        // consume identifier
-        // If match '(' function decl
-        // else variable decl
+
+        return parseFunctionDecl();
     }
 
     return parseStmt();
+}
+
+StmtNodePtr Parser::parseFunctionDecl() {
+    Token& name = consume(TokenType::IDENTIFIER, "Expect identifier after function declaration.");
+    consume(TokenType::LEFT_PAREN, "Expect '('");
+    consume(TokenType::VOID, "Expect 'void'");
+    consume(TokenType::RIGHT_PAREN, "Expect ')'");
+    consume(TokenType::LEFT_BRACE, "Expect '{'.");
+
+    auto body = parseStmt();
+    consume(TokenType::RIGHT_BRACE, "Expect '}' After function body.");
+
+    return createAstNode<FunctionStmt>(std::move(name), std::move(body));
 }
 
 StmtNodePtr Parser::parseStmt() {
@@ -35,6 +47,7 @@ StmtNodePtr Parser::parseStmt() {
 StmtNodePtr Parser::parseReturnStmt() {
     auto expr = parseExpr();
     consume(TokenType::SEMICOLON, "Expected ';' after return expression.");
+
     return createAstNode<ReturnStmt>(std::move(expr));
 }
 
@@ -45,12 +58,16 @@ StmtNodePtr Parser::parseExprStmt() {
     return createAstNode<ExprStmt>(std::move(expr));
 }
 
-ExprNodePtr Parser::parseExpr() {}
+// Operator Precedence parsing
+ExprNodePtr Parser::parseExpr() {
+    if (match(TokenType::INTEGER_LITERAL))
+        return createAstNode<LiteralExpr>(previous().literal);
+}
 
-void Parser::consume(TokenType expected, std::string_view errorMessage) {
+Token& Parser::consume(TokenType expected, std::string_view errorMessage) {
     if (peek().type == expected) {
         ++m_Current;
-        return;
+        return previous();
     }
     throw ParseError();
 }
@@ -67,10 +84,6 @@ Token& Parser::previous() {
 
 const Token& Parser::peek() const {
     return m_Tokens[m_Current];
-}
-
-const Token& Parser::peekNext() const {
-    return m_Tokens[m_Current + 1];
 }
 
 bool Parser::isatEnd() const {
