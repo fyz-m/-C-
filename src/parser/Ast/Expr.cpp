@@ -1,6 +1,6 @@
 #include "Expr.hpp"
 
-BinaryExpr::BinaryExpr(ExprNodePtr left, Token& operation, ExprNodePtr right)
+BinaryExpr::BinaryExpr(ExprNodePtr left, Token operation, ExprNodePtr right)
     : m_leftNode{std::move(left)},
       m_operation{std::move(operation)},
       m_rightNode{std::move(right)} {}

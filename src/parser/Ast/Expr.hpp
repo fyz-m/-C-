@@ -41,7 +41,7 @@ struct BinaryExpr {
                              // to determine op
     const ExprNodePtr m_rightNode;
 
-    BinaryExpr(ExprNodePtr left, Token& operation, ExprNodePtr right);
+    BinaryExpr(ExprNodePtr left, Token operation, ExprNodePtr right);
 };
 
 struct LiteralExpr {
