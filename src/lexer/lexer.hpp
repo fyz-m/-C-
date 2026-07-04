@@ -1,6 +1,7 @@
 #include "Token.hpp"
 
 #include <cstddef>
+#include <expected>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -8,10 +9,15 @@
 class Lexer {
 
   private:
+    // These act as pointers to keep track of the location
+    // the scanner is at in the source code
     size_t m_start{};
     size_t m_current{};
+
+    // Used for error reporting
     size_t m_line{1};
-    size_t m_column{1};
+    size_t m_column_start{1};
+    size_t m_column_end{1};
 
     std::string_view m_source;
     std::vector<Token> m_tokens;
@@ -21,7 +27,7 @@ class Lexer {
   public:
     Lexer(std::string_view source);
 
-    std::vector<Token> Tokenize();
+    std::expected<std::vector<Token>, bool> Tokenize();
 
   private:
     void scanToken();
@@ -31,7 +37,9 @@ class Lexer {
     void addToken(TokenType type, LiteralValue& literal);
 
     // Return current subscript of source
-    std::string getLexeme();
+    std::string getLexeme() const;
+
+    Location getLocation() const;
 
     void number();
 
@@ -42,6 +50,9 @@ class Lexer {
     bool isatEnd() const;
 
     size_t incrementLine();
+
+    // Add line to diagnostic engine's line tracker
+    void addLineToDE() const;
 
     // Return char at location m_current and increment m_current (consume char)
     char advance();
@@ -54,17 +65,13 @@ class Lexer {
 
     char peekNext() const;
 
-    bool isAlpha(char c);
-
-    bool isAlphanumeric(char c);
+    const std::unordered_map<std::string, TokenType> m_KEYWORDS{{{"else", TokenType::ELSE},
+                                                                 {"for", TokenType::FOR},
+                                                                 {"if", TokenType::IF},
+                                                                 {"return", TokenType::RETURN},
+                                                                 {"while", TokenType::WHILE},
+                                                                 {"break", TokenType::BREAK},
+                                                                 {"void", TokenType::VOID},
+                                                                 {"int", TokenType::INT},
+                                                                 {"float", TokenType::FLOAT}}};
 };
-
-const std::unordered_map<std::string, TokenType> KEYWORDS{{{"else", TokenType::ELSE},
-                                                           {"for", TokenType::FOR},
-                                                           {"if", TokenType::IF},
-                                                           {"return", TokenType::RETURN},
-                                                           {"while", TokenType::WHILE},
-                                                           {"break", TokenType::BREAK},
-                                                           {"void", TokenType::VOID},
-                                                           {"int", TokenType::INT},
-                                                           {"float", TokenType::FLOAT}}};

@@ -1,18 +1,27 @@
 #include "lexer.hpp"
 
+#include "../diagnostics/DiagnosticsEngine.hpp"
+
 Lexer::Lexer(std::string_view source)
     : m_source{source} {
     m_tokens.reserve(1000 * sizeof(Token));
 }
 
-std::vector<Token> Lexer::Tokenize() {
+std::expected<std::vector<Token>, bool> Lexer::Tokenize() {
 
     while (!isatEnd()) {
         m_start = m_current;
+        m_column_start = m_column_end;
         scanToken();
     }
 
-    m_tokens.emplace_back(TokenType::END_OF_FILE, m_line, m_column);
+    // Add last line
+    addLineToDE();
+
+    if (m_hadError)
+        return std::unexpected(false);
+
+    m_tokens.emplace_back(TokenType::END_OF_FILE, Location());
     return m_tokens;
 }
 
@@ -81,29 +90,30 @@ void Lexer::scanToken() {
         incrementLine();
         break;
 
-    case '"':
-        string();
-        break;
+        // case '"':
+        //     string();
+        //     break;
 
     default:
         if (std::isdigit(c)) {
             number();
-        } else if (isAlpha(c) || c == '_') {
+        } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
             identifier();
         } else {
-            // error
+            m_hadError = true;
+            // report error
         }
         break;
     }
 }
 
 void Lexer::addToken(TokenType type) {
-    m_tokens.emplace_back(type, getLexeme(), m_line, m_column);
+    m_tokens.emplace_back(type, getLexeme(), getLocation());
 }
 
 void Lexer::addToken(TokenType type, LiteralValue& literal) {
 
-    m_tokens.emplace_back(type, getLexeme(), m_line, m_column, std::move(literal));
+    m_tokens.emplace_back(type, getLexeme(), getLocation(), std::move(literal));
 }
 
 void Lexer::number() {
@@ -112,6 +122,7 @@ void Lexer::number() {
 
     // Decimal number (float)
     if (peek() == '.' && std::isdigit(peekNext())) {
+
         // consume '.'
         advance();
         while (std::isdigit(peek()))
@@ -126,21 +137,24 @@ void Lexer::number() {
 }
 
 void Lexer::identifier() {
-    while (isAlphanumeric(peek()) || peek() == '_')
+    while (std::isalnum(peek()) || peek() == '_')
         advance();
 
     auto identifier = getLexeme();
 
-    auto type = KEYWORDS.find(identifier);
-    if (type == KEYWORDS.end())
-        m_tokens.emplace_back(TokenType::IDENTIFIER, std::move(identifier), m_line, m_column);
+    auto type = m_KEYWORDS.find(identifier);
+    if (type == m_KEYWORDS.end())
+        m_tokens.emplace_back(TokenType::IDENTIFIER, std::move(identifier), getLocation());
     else
-        m_tokens.emplace_back(type->second, m_line, m_column);
+        m_tokens.emplace_back(type->second, getLocation());
 }
 
-std::string Lexer::getLexeme() {
-    std::string lexeme{m_source.substr(m_start, m_current - m_start)};
-    return lexeme;
+std::string Lexer::getLexeme() const {
+    return std::string{m_source.substr(m_start, m_current - m_start)};
+}
+
+Location Lexer::getLocation() const {
+    return Location(m_line, m_column_start, m_column_end);
 }
 
 bool Lexer::match(char expected) {
@@ -152,8 +166,19 @@ bool Lexer::match(char expected) {
 }
 
 size_t Lexer::incrementLine() {
-    m_column = 1;
+    addLineToDE();
+    m_column_start = 1;
+    m_column_end = 1;
     return m_line++;
+}
+
+void Lexer::addLineToDE() const {
+    static size_t line_start = 0;
+    static size_t line_end = 0;
+
+    line_end = m_current;
+    Diagnostics::DiagnosticsEngine::addLine(line_start, line_end);
+    line_start = m_current;
 }
 
 bool Lexer::isatEnd() const {
@@ -173,14 +198,6 @@ char Lexer::peekNext() const {
 }
 
 char Lexer::advance() {
-    ++m_column;
+    ++m_column_end;
     return m_source.at(m_current++);
-}
-
-bool Lexer::isAlpha(char c) {
-    return ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'));
-}
-
-bool Lexer::isAlphanumeric(char c) {
-    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9');
 }
