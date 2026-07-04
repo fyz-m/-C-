@@ -1,3 +1,4 @@
+#pragma once
 #include <cstddef>
 #include <string>
 #include <variant>
@@ -6,26 +7,27 @@ enum class TokenType;
 
 using LiteralValue = std::variant<std::monostate, int, float, std::string>;
 
+struct Location {
+    size_t line{};
+    size_t col_start{};
+    size_t col_end{};
+};
+
 struct Token {
 
     const TokenType type;
     const std::string lexeme{};
-    const size_t line{};
-    const size_t column{};
+    Location loc;
     const LiteralValue literal{};
 
-    Token(TokenType type, std::string&& lexeme, size_t line, size_t column)
-        : type{type}, lexeme{std::move(lexeme)}, line{line}, column(column) {}
+    Token(TokenType type, std::string&& lexeme, Location location)
+        : type{type}, lexeme{std::move(lexeme)}, loc{location} {}
 
-    Token(TokenType type, std::string&& lexeme, size_t line, size_t column, LiteralValue&& literal)
-        : type{type},
-          lexeme{std::move(lexeme)},
-          line{line},
-          column(column),
-          literal{std::move(literal)} {}
+    Token(TokenType type, std::string&& lexeme, Location location, LiteralValue&& literal)
+        : type{type}, lexeme{std::move(lexeme)}, loc{location}, literal{std::move(literal)} {}
 
-    Token(TokenType type, size_t line, size_t column)
-        : type{type}, line{line}, column(column) {}
+    Token(TokenType type, Location location)
+        : type{type}, loc{location} {}
 };
 
 enum class TokenType {
