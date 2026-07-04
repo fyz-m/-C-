@@ -26,6 +26,10 @@ void DiagnosticsEngine::printLn(size_t line) {
 
 void DiagnosticsEngine::report(Token& token, std::string_view errorMessage, ErrorType type) {}
 
+void DiagnosticsEngine::report(std::string_view errorMessage, size_t line, size_t column) {
+    m_Errors.emplace_back(Location(line, column, column), errorMessage, ErrorType::LexerError);
+}
+
 void DiagnosticsEngine::addLine(size_t lineStart, size_t lineEnd) {
     m_lineInfo.emplace_back(lineStart, lineEnd);
 }
@@ -35,6 +39,34 @@ Diagnostic DiagnosticsEngine::createDiagnostic(Token& token, std::string_view er
     return Diagnostic();
 }
 
-void DiagnosticsEngine::renderDiagnostic(Diagnostic& diagnostic) {}
+void DiagnosticsEngine::DisplayAllErrors() {
+    for (auto& error : m_Errors) {
+        renderDiagnostic(error);
+    }
+}
+
+void DiagnosticsEngine::renderDiagnostic(Diagnostic& diagnostic) {
+
+    auto line_col_ = std::format("{}:{}c", diagnostic.loc.line, diagnostic.loc.col_start);
+
+    std::println("{} | Error: {}", line_col_, diagnostic.errorMessage);
+    std::println("{} |", std::string(line_col_.length(), ' '));
+    std::print("{} | ", std::string(line_col_.length(), ' '));
+
+    DiagnosticsEngine::printLn(diagnostic.loc.line);
+
+    size_t length = diagnostic.loc.col_end - diagnostic.loc.col_start;
+    if (length == 0)
+        length = 1;
+
+    if (diagnostic.loc.line == m_lineInfo.size() - 1)
+        std::println();
+
+    std::print("{} | ", std::string(line_col_.length(), ' '));
+    std::println("{}{} Here", std::string(diagnostic.loc.col_start - 1, ' '),
+                 std::string(length, '^'));
+
+    std::println();
+}
 
 } // namespace Diagnostics

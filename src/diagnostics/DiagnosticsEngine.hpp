@@ -16,7 +16,7 @@ struct LineInformation {
 };
 
 struct Diagnostic {
-    Token* token{};
+    Location loc{};
     std::string_view errorMessage{};
     ErrorType type{};
 };
@@ -27,11 +27,14 @@ class DiagnosticsEngine {
     inline static std::string_view m_source;
     // Keep track of each line so entire line can be printed in error
     inline static std::vector<LineInformation> m_lineInfo;
+    inline static std::vector<Diagnostic> m_Errors;
     inline static size_t m_errorCount;
 
   public:
     static void init(std::string_view m_source);
     static void report(Token& token, std::string_view errorMessage, ErrorType type);
+    static void DisplayAllErrors();
+    static void report(std::string_view errorMessage, size_t line, size_t column);
     static void addLine(size_t lineStart, size_t lineEnd);
 
     static void printLn(size_t line);
@@ -40,7 +43,7 @@ class DiagnosticsEngine {
 
   private:
     Diagnostic createDiagnostic(Token& token, std::string_view errorMessage, ErrorType type);
-    void renderDiagnostic(Diagnostic& diagnostic);
+    static void renderDiagnostic(Diagnostic& diagnostic);
 };
 
 } // namespace Diagnostics
