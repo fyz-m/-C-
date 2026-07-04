@@ -2,3 +2,7 @@ test.txt
 .clangd
 .clang-format
 Notes.txt
+test
+build
+.vscode
+.cache
