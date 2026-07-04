@@ -3,16 +3,19 @@
 #include <print>
 #include <sstream>
 
-void PrintAST(const ExprNodePtr& exprNode) {
-    std::println("{}", std::visit(PrintExpr{}, exprNode));
-}
+namespace AST {
 
-std::string Printer::printExpr(const ExprNodePtr& exprNode) {
-    return std::visit(PrintExpr{}, exprNode);
+void Printer::printAST(const std::vector<StmtNodePtr>& nodes) {
+    for (const auto& node : nodes)
+        std::println("{}", Printer::printStmt(node));
 }
 
 std::string Printer::printStmt(const StmtNodePtr& stmtNode) {
     return std::visit(PrintStmt{}, stmtNode);
+}
+
+std::string Printer::printExpr(const ExprNodePtr& exprNode) {
+    return std::visit(PrintExpr{}, exprNode);
 }
 
 std::string PrintExpr::operator()(const LiteralExprPtr& expr) const {
@@ -66,7 +69,7 @@ std::string PrintStmt::operator()(const IfStmtPtr& stmt) const {
 }
 
 std::string PrintStmt::operator()(const FunctionStmtPtr& stmt) const {
-    return std::format("FUNCTION \"{}\"\n  {}", stmt->m_Identifier.lexeme,
+    return std::format("FUNCTION\n  NAME = \"{}\"\n  {}", stmt->m_Identifier.lexeme,
                        indent("BODY", {&stmt->m_Body}));
 }
 
@@ -75,26 +78,11 @@ std::string PrintStmt::indent(const std::string& name,
     std::stringstream s;
     s << name;
     for (const auto* stmt : stmtNodes) {
-        s << "\n  | ";
+        s << "\n    | ";
         s << std::visit(PrintStmt{}, *stmt);
     }
     s << '\n';
     return s.str();
 }
 
-int main() {
-    auto Lnode = createAstNode<LiteralExpr>(4);
-    auto L2 = createAstNode<LiteralExpr>(1);
-    auto Rnode = createAstNode<LiteralExpr>(1);
-
-    auto plus = Token(TokenType::PLUS, "+", 1, 1);
-    auto star = Token(TokenType::STAR, "*", 1, 1);
-
-    auto B = createAstNode<BinaryExpr>(std::move(Lnode), plus, std::move(Rnode));
-    auto A = createAstNode<BinaryExpr>(std::move(L2), star, std::move(B));
-    auto rt = createAstNode<ReturnStmt>(std::move(A));
-
-    Token name = Token(TokenType::IDENTIFIER, "main", 1, 2);
-    auto func = createAstNode<FunctionStmt>(std::move(name), std::move(rt));
-    std::println("{}", Printer::printStmt(func));
-}
+} // namespace AST

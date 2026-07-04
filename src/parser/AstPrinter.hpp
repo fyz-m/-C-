@@ -2,9 +2,14 @@
 #include "Ast/Expr.hpp"
 #include "Ast/Stmt.hpp"
 
+#include <vector>
+
+namespace AST {
+
 class Printer {
 
   public:
+    static void printAST(const std::vector<StmtNodePtr>& nodes);
     static std::string printExpr(const ExprNodePtr& exprNode);
     static std::string printStmt(const StmtNodePtr& stmtNode);
 };
@@ -30,4 +35,4 @@ struct PrintStmt {
                        std::initializer_list<const StmtNodePtr*> stmtNodes) const;
 };
 
-void PrintAST(const ExprNodePtr& exprNode);
+} // namespace AST
