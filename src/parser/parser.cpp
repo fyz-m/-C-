@@ -1,30 +1,40 @@
 #include "parser.hpp"
 
-std::vector<StmtNodePtr> Parser::Parse() {
+#include "../diagnostics/DiagnosticsEngine.hpp"
+
+Statements Parser::Parse() {
 
     std::vector<StmtNodePtr> statements;
     statements.reserve(100);
 
     while (!isatEnd())
-        statements.push_back(parseDeclaration());
+        if (auto result = parseDeclaration())
+            statements.push_back(std::move(result.value()));
 
     return statements;
 }
 
-StmtNodePtr Parser::parseDeclaration() {
+std::optional<StmtNodePtr> Parser::parseDeclaration() {
 
-    if (match(TokenType::INT)) {
+    try {
 
-        return parseFunctionDecl();
+        if (match(TokenType::INT)) {
+
+            return parseFunctionDecl();
+        }
+
+        return parseStmt();
+
+    } catch (const ParseError&) {
+        synchronize();
+        return std::nullopt;
     }
-
-    return parseStmt();
 }
 
 StmtNodePtr Parser::parseFunctionDecl() {
     Token& name = consume(TokenType::IDENTIFIER, "Expect identifier after function declaration.");
-    consume(TokenType::LEFT_PAREN, "Expect '('");
-    consume(TokenType::VOID, "Expect 'void'");
+    consume(TokenType::LEFT_PAREN, "Expected '(' after function identifier");
+    consume(TokenType::VOID, "Expected 'void'");
     consume(TokenType::RIGHT_PAREN, "Expect ')'");
     consume(TokenType::LEFT_BRACE, "Expect '{'.");
 
@@ -36,8 +46,8 @@ StmtNodePtr Parser::parseFunctionDecl() {
 
 StmtNodePtr Parser::parseStmt() {
 
-    if (match(TokenType::IF))
-        return parseIfStmt();
+    // if (match(TokenType::IF))
+    //     return parseIfStmt();
     if (match(TokenType::RETURN))
         return parseReturnStmt();
 
@@ -62,14 +72,39 @@ StmtNodePtr Parser::parseExprStmt() {
 ExprNodePtr Parser::parseExpr() {
     if (match(TokenType::INTEGER_LITERAL))
         return createAstNode<LiteralExpr>(previous().literal);
+    throw ParseError(previous());
+}
+
+bool Parser::match(TokenType expected) {
+
+    if (peek().type == expected) {
+        ++m_Current;
+        return true;
+    }
+    return false;
+}
+
+bool Parser::check(TokenType expected) {
+    return peek().type == expected;
+}
+
+bool Parser::match(std::initializer_list<TokenType>& exepectedTypes) {
+
+    for (const auto& expectedType : exepectedTypes) {
+        if (peek().type == expectedType) {
+            ++m_Current;
+            return true;
+        }
+    }
+    return false;
 }
 
 Token& Parser::consume(TokenType expected, std::string_view errorMessage) {
-    if (peek().type == expected) {
-        ++m_Current;
-        return previous();
-    }
-    throw ParseError();
+    if (peek().type == expected)
+        return m_Tokens[m_Current++];
+
+    Diagnostics::DiagnosticsEngine::report(peek(), errorMessage);
+    throw ParseError(m_Tokens[m_Current]);
 }
 
 Token& Parser::advance() {
@@ -82,10 +117,37 @@ Token& Parser::previous() {
     return m_Tokens[m_Current - 1];
 }
 
-const Token& Parser::peek() const {
+Token& Parser::peek() {
     return m_Tokens[m_Current];
 }
 
-bool Parser::isatEnd() const {
+bool Parser::isatEnd() {
     return peek().type == TokenType::END_OF_FILE;
+}
+
+void Parser::synchronize() {
+    advance();
+
+    using enum TokenType;
+
+    // Keep consuming tokens until keyword or ;
+    while (!isatEnd()) {
+        if (previous().type == SEMICOLON)
+            return;
+
+        switch (peek().type) {
+        case IF:
+        case ELSE:
+        case WHILE:
+        case FOR:
+        case RETURN:
+        case BREAK:
+        case VOID:
+        case INT:
+        case FLOAT:
+            return;
+        default:
+            advance();
+        }
+    }
 }

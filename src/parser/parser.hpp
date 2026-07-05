@@ -4,8 +4,10 @@
 #include "Ast/Expr.hpp"
 #include "Ast/Stmt.hpp"
 
+#include <expected>
 #include <vector>
 
+using Statements = std::expected<std::vector<StmtNodePtr>, bool>;
 class Parser {
 
   private:
@@ -16,22 +18,22 @@ class Parser {
     Parser(std::vector<Token>& tokens)
         : m_Tokens{std::move(tokens)} {}
 
-    std::vector<StmtNodePtr> Parse();
+    Statements Parse();
 
   private:
     // Parsing statements
 
-    StmtNodePtr parseDeclaration();
+    std::optional<StmtNodePtr> parseDeclaration();
 
     StmtNodePtr parseFunctionDecl();
 
-    StmtNodePtr parseVariableDecl();
+    // StmtNodePtr parseVariableDecl();
 
     StmtNodePtr parseStmt();
 
     StmtNodePtr parseReturnStmt();
 
-    IfStmtPtr parseIfStmt();
+    // StmtNodePtr parseIfStmt();
 
     StmtNodePtr parseExprStmt();
 
@@ -44,9 +46,9 @@ class Parser {
     // Conditional advance/consume
     bool match(TokenType expected);
 
-    bool match(std::initializer_list<Token>& exepectedTypes);
+    bool match(std::initializer_list<TokenType>& exepectedTypes);
 
-    bool check(TokenType expected) const;
+    bool check(TokenType expected);
 
     Token& consume(TokenType expected, std::string_view errorMessage);
 
@@ -57,15 +59,17 @@ class Parser {
     Token& previous();
 
     // Return current token without consuming
-    const Token& peek() const;
+    Token& peek();
 
-    const Token& peekNext() const;
+    Token& peekNext();
 
-    bool isatEnd() const;
+    bool isatEnd();
 
     void synchronize();
 };
 
-struct ParseError : public std::runtime_error {
-    ParseError();
+struct ParseError : public std::exception {
+    Token m_Token;
+    ParseError(Token& token)
+        : m_Token(token) {}
 };
