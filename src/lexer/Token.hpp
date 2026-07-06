@@ -15,10 +15,10 @@ struct Location {
 
 struct Token {
 
-    const TokenType type;
-    const std::string lexeme{};
+    TokenType type;
+    std::string lexeme{};
     Location loc;
-    const LiteralValue literal{};
+    LiteralValue literal{};
 
     Token(TokenType type, std::string&& lexeme, Location location)
         : type{type}, lexeme{std::move(lexeme)}, loc{location} {}
