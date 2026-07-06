@@ -69,10 +69,74 @@ StmtNodePtr Parser::parseExprStmt() {
 }
 
 // Operator Precedence parsing
-ExprNodePtr Parser::parseExpr() {
-    if (match(TokenType::INTEGER_LITERAL))
-        return createAstNode<LiteralExpr>(previous().literal);
-    throw ParseError(previous());
+ExprNodePtr Parser::parseExpr(size_t min_bp) {
+
+    /*
+        ExprNode leftNode  = parsePrefix()  // first thing in expression, e.g literal, unary)
+
+        while true {
+
+            op = peek().type            // Look at operator after prefix
+            if (op != infix_operator)   // End of expression, break and return
+                break;
+            if (op.bp < min_bp)                // If operators binding power is >= min_bp,
+                break;                  // take the prefix and recurse right to form a node
+
+            advance()       // consume operator
+            rightNode = parseExpression(op.bp)  //  Parse right side
+            leftNode = (leftNode, op, rightNode)
+        }
+        return leftNode
+    */
+
+    auto leftNode = parsePrefixExpr();
+
+    while (true) {
+        auto& op = peek();
+        auto it = m_bindingPower.find(op.type);
+        if (it == m_bindingPower.end())
+            break;
+
+        auto op_bp = it->second;
+        if (op_bp < min_bp)
+            break;
+
+        advance();
+        auto rightNode = parseExpr(op_bp + 1);
+        leftNode =
+            createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightNode));
+    }
+
+    return leftNode;
+}
+
+ExprNodePtr Parser::parsePrefixExpr() {
+
+    ExprNodePtr node;
+    using enum TokenType;
+
+    switch (peek().type) {
+
+    case FLOAT_LITERAL:
+    case INTEGER_LITERAL:
+        node = createAstNode<LiteralExpr>(peek().literal);
+        break;
+
+        /*
+            case UnaryExpr (e.g '-'):
+                node = create<unary>(
+                    op = peek()
+                    literal = parsePrefixExpr()
+                )
+        */
+
+    default:
+        Diagnostics::DiagnosticsEngine::report(peek(), "Malformed or missing expression");
+        throw ParseError();
+    }
+
+    advance();
+    return node;
 }
 
 bool Parser::match(TokenType expected) {
@@ -82,10 +146,6 @@ bool Parser::match(TokenType expected) {
         return true;
     }
     return false;
-}
-
-bool Parser::check(TokenType expected) {
-    return peek().type == expected;
 }
 
 bool Parser::match(std::initializer_list<TokenType>& exepectedTypes) {
@@ -99,12 +159,16 @@ bool Parser::match(std::initializer_list<TokenType>& exepectedTypes) {
     return false;
 }
 
+bool Parser::check(TokenType expected) {
+    return peek().type == expected;
+}
+
 Token& Parser::consume(TokenType expected, std::string_view errorMessage) {
     if (peek().type == expected)
         return m_Tokens[m_Current++];
 
     Diagnostics::DiagnosticsEngine::report(peek(), errorMessage);
-    throw ParseError(m_Tokens[m_Current]);
+    throw ParseError();
 }
 
 Token& Parser::advance() {
