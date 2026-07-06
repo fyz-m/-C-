@@ -25,34 +25,90 @@ TEST_P(ParseExprTest, expression_test) {
     EXPECT_EQ(output, tc.expected_output);
 }
 
-INSTANTIATE_TEST_SUITE_P(Parser, ParseExprTest,
+INSTANTIATE_TEST_SUITE_P(
+    Parser, 
+    ParseExprTest,
                         
-::testing::Values(
-    ExprTestCase("addition", "1 + 2","(+ 1 2)"),
-    ExprTestCase("add_mult", "1 + 2 * 3","(+ 1 (* 2 3))"),
-    ExprTestCase("mult_sub", "3 * 4 - 10","(- (* 3 4) 10)"),
+    ::testing::Values 
+    (
+        // Basic precedence
+        ExprTestCase("addition", "1 + 2", "(+ 1 2)"),
+        ExprTestCase("add_mult", "1 + 2 * 3", "(+ 1 (* 2 3))"),
+        ExprTestCase("mult_sub", "3 * 4 - 10", "(- (* 3 4) 10)"),
+        ExprTestCase("div_before_add", "1 + 8 / 4", "(+ 1 (/ 8 4))"),
 
-    ExprTestCase("addition_is_right_associative",
-                     "1 + 2 + 3 + 4", 
-           "(+ (+ (+ 1 2) 3) 4)"),
+        // Associativity 
+        ExprTestCase("addition_is_left_associative",
+                        "1 + 2 + 3 + 4", 
+                        "(+ (+ (+ 1 2) 3) 4)"),
+        ExprTestCase("addition_and_subtraction_is_left_associative",
+                        "1 - 2 + 3 - 4", 
+                        "(- (+ (- 1 2) 3) 4)"),
+        ExprTestCase("multiplication_is_left_associative",
+                        "1 * 2 * 3 * 4", 
+                        "(* (* (* 1 2) 3) 4)"),
+        ExprTestCase("division_is_left_associative",
+                        "8 / 4 / 2",
+                        "(/ (/ 8 4) 2)"),
 
-    ExprTestCase("addition_and_subtraction_is_right_associative",
-                     "1 - 2 + 3 - 4", 
-           "(- (+ (- 1 2) 3) 4)"),
+        // Grouping / parentheses
+        ExprTestCase("simple_parens", "(1 + 2)", "(+ 1 2)"),
+        ExprTestCase("parens_override_precedence",
+                        "(1 + 2) * 3",
+                        "(* (+ 1 2) 3)"),
+        ExprTestCase("nested_parens",
+                        "((1 + 2) * (3 - 4))",
+                        "(* (+ 1 2) (- 3 4))"),
+        ExprTestCase("redundant_parens", "(((5)))", "5")
 
-    ExprTestCase("multiplication_is_right_associative",
-                     "1 * 2 * 3 * 4", 
-           "(* (* (* 1 2) 3) 4)"),
+        // // Unary operators
+        // ExprTestCase("unary_negation", "-5", "(- 5)"),
+        // ExprTestCase("unary_negation_in_expr",
+        //                 "-5 + 3",
+        //                 "(+ (- 5) 3)"),
+        // ExprTestCase("unary_binds_tighter_than_mult",
+        //                 "-2 * 3",
+        //                 "(* (- 2) 3)"),
+        // ExprTestCase("double_unary", "--5", "(- (- 5))"),
+        // ExprTestCase("logical_not", "!1", "(! 1)"),
 
-    ExprTestCase("add_mult2", "1 + 2 * 3", "(+ 1 (* 2 3))"),
-    ExprTestCase("add_mult3", "1 + 2 * 3", "(+ 1 (* 2 3))"),
-    ExprTestCase("add_mult4", "1 + 2 * 3", "(+ 1 (* 2 3))"),
-    ExprTestCase("add_mult5", "1 + 2 * 3", "(+ 1 (* 2 3))"),
-    ExprTestCase("add_mult6", "1 + 2 * 3", "(+ 1 (* 2 3))")),
+        // // Comparisons
+        // ExprTestCase("less_than", "1 < 2", "(< 1 2)"),
+        // ExprTestCase("comparison_lower_precedence_than_add",
+        //                 "1 + 2 < 4",
+        //                 "(< (+ 1 2) 4)"),
+        // ExprTestCase("equality", "1 == 2", "(== 1 2)"),
+        // ExprTestCase("not_equal", "1 != 2", "(!= 1 2)"),
+        // ExprTestCase("equality_lower_than_comparison",
+        //                 "1 < 2 == 3 < 4",
+        //                 "(== (< 1 2) (< 3 4))"),
 
-    [](const ::testing::TestParamInfo<ExprTestCase>& info) {
-        return info.param.test_name;
-        }
+        // // Logical operators
+        // ExprTestCase("logical_and", "1 && 0", "(&& 1 0)"),
+        // ExprTestCase("logical_or", "1 || 0", "(|| 1 0)"),
+        // ExprTestCase("and_binds_tighter_than_or",
+        //                 "1 || 0 && 1",
+        //                 "(|| 1 (&& 0 1))"),
+        // ExprTestCase("comparison_binds_tighter_than_logical",
+        //                 "1 < 2 && 3 < 4",
+        //                 "(&& (< 1 2) (< 3 4))"),
+
+        // // Mixed / stress cases
+        // ExprTestCase("full_precedence_stack",
+        //                 "1 + 2 * 3 < 4 * 5 && 6 == 6",
+        //                 "(&& (< (+ 1 (* 2 3)) (* 4 5)) (== 6 6))"),
+        // ExprTestCase("deeply_nested_arithmetic",
+        //                 "1 + 2 * (3 - 4) / 5",
+        //                 "(+ 1 (/ (* 2 (- 3 4)) 5))"),
+
+        // // Edge cases
+        // ExprTestCase("single_literal", "42", "42"),
+        // ExprTestCase("single_negative_literal", "-42", "(- 42)")
+    ),
+
+        [](const ::testing::TestParamInfo<ExprTestCase>& info) {
+            return info.param.test_name;
+            }
 );
 
 // NOLINTEND
