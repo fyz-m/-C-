@@ -22,7 +22,6 @@ class Parser {
 
     Statements Parse();
 
-  private:
     // Parsing statements
 
     std::optional<StmtNodePtr> parseDeclaration();
@@ -45,6 +44,7 @@ class Parser {
 
     ExprNodePtr parsePrefixExpr();
 
+  private:
     // Helpers
 
     // Conditional advance/consume
@@ -71,11 +71,16 @@ class Parser {
 
     void synchronize();
 
-    std::unordered_map<TokenType, size_t> m_bindingPower{
-        {TokenType::PLUS, 10},
-        {TokenType::MINUS, 10},
-        {TokenType::STAR, 20},
-        {TokenType::SLASH, 20},
+    struct BindingPower {
+        size_t lbp;
+        size_t rbp;
+    };
+
+    std::unordered_map<TokenType, BindingPower> m_bindingPower{
+        {TokenType::PLUS, {.lbp = 10, .rbp = 11}},
+        {TokenType::MINUS, {.lbp = 10, .rbp = 11}},
+        {TokenType::STAR, {.lbp = 20, .rbp = 21}},
+        {TokenType::SLASH, {.lbp = 20, .rbp = 21}},
     };
 };
 

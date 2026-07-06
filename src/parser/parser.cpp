@@ -78,15 +78,18 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
     while (true) {
         auto& op = peek();
         auto it = m_bindingPower.find(op.type);
-        if (it == m_bindingPower.end()) // end of expression
+
+        // If next token is not an infix operator,
+        // finish parsing and return the expression tree
+        if (it == m_bindingPower.end())
             break;
 
         auto op_bp = it->second;
-        if (op_bp < min_bp)
+        if (op_bp.lbp < min_bp)
             break;
 
         advance();
-        auto rightNode = parseExpr(op_bp + 1);
+        auto rightNode = parseExpr(op_bp.rbp); //
         leftNode =
             createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightNode));
     }
