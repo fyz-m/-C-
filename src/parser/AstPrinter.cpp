@@ -60,7 +60,9 @@ std::string PrintStmt::operator()(const ExprStmtPtr& stmt) const {
 }
 
 std::string PrintStmt::operator()(const ReturnStmtPtr& stmt) const {
-    return std::format("RETURN: {}", Printer::printExpr(stmt->m_RetValue));
+    if (stmt->m_RetValue.has_value())
+        return std::format("RETURN: {}", Printer::printExpr(stmt->m_RetValue.value()));
+    return std::format("RETURN (nothing)");
 }
 
 std::string PrintStmt::operator()(const IfStmtPtr& stmt) const {
