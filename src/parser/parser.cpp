@@ -68,26 +68,8 @@ StmtNodePtr Parser::parseExprStmt() {
     return createAstNode<ExprStmt>(std::move(expr));
 }
 
-// Operator Precedence parsing
+// Operator Precedence parsing (Pratt Parser)
 ExprNodePtr Parser::parseExpr(size_t min_bp) {
-
-    /*
-        ExprNode leftNode  = parsePrefix()  // first thing in expression, e.g literal, unary)
-
-        while true {
-
-            op = peek().type            // Look at operator after prefix
-            if (op != infix_operator)   // End of expression, break and return
-                break;
-            if (op.bp < min_bp)                // If operators binding power is >= min_bp,
-                break;                  // take the prefix and recurse right to form a node
-
-            advance()       // consume operator
-            rightNode = parseExpression(op.bp)  //  Parse right side
-            leftNode = (leftNode, op, rightNode)
-        }
-        return leftNode
-    */
 
     auto leftNode = parsePrefixExpr();
 
@@ -106,7 +88,6 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
         leftNode =
             createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightNode));
     }
-
     return leftNode;
 }
 
@@ -118,25 +99,14 @@ ExprNodePtr Parser::parsePrefixExpr() {
     switch (peek().type) {
 
     case FLOAT_LITERAL:
-    case INTEGER_LITERAL:
-        node = createAstNode<LiteralExpr>(peek().literal);
-        break;
-
-        /*
-            case UnaryExpr (e.g '-'):
-                node = create<unary>(
-                    op = peek()
-                    literal = parsePrefixExpr()
-                )
-        */
-
+    case INTEGER_LITERAL: {
+        advance();
+        return createAstNode<LiteralExpr>(previous().literal);
+    }
     default:
-        Diagnostics::DiagnosticsEngine::report(peek(), "Malformed or missing expression");
+        Diagnostics::DiagnosticsEngine::report(peek(), "Malformed expression");
         throw ParseError();
     }
-
-    advance();
-    return node;
 }
 
 bool Parser::match(TokenType expected) {
@@ -167,7 +137,11 @@ Token& Parser::consume(TokenType expected, std::string_view errorMessage) {
     if (peek().type == expected)
         return m_Tokens[m_Current++];
 
-    Diagnostics::DiagnosticsEngine::report(peek(), errorMessage);
+    auto* err_tok = &peek();
+    if (err_tok->type == TokenType::END_OF_FILE)
+        err_tok = &previous();
+
+    Diagnostics::DiagnosticsEngine::report(*err_tok, errorMessage);
     throw ParseError();
 }
 
