@@ -65,13 +65,13 @@ class Lexer {
 
     char peekNext() const;
 
-    const std::unordered_map<std::string, TokenType> m_KEYWORDS{{{"else", TokenType::ELSE},
-                                                                 {"for", TokenType::FOR},
-                                                                 {"if", TokenType::IF},
-                                                                 {"return", TokenType::RETURN},
-                                                                 {"while", TokenType::WHILE},
-                                                                 {"break", TokenType::BREAK},
-                                                                 {"void", TokenType::VOID},
-                                                                 {"int", TokenType::INT},
-                                                                 {"float", TokenType::FLOAT}}};
+    std::unordered_map<std::string, TokenType> m_KEYWORDS{{{"else", TokenType::ELSE},
+                                                           {"for", TokenType::FOR},
+                                                           {"if", TokenType::IF},
+                                                           {"return", TokenType::RETURN},
+                                                           {"while", TokenType::WHILE},
+                                                           {"break", TokenType::BREAK},
+                                                           {"void", TokenType::VOID},
+                                                           {"int", TokenType::INT},
+                                                           {"float", TokenType::FLOAT}}};
 };

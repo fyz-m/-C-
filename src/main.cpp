@@ -1,3 +1,4 @@
+#include "diagnostics/DiagnosticsEngine.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/AstPrinter.hpp"
 #include "parser/parser.hpp"
@@ -28,15 +29,25 @@ void run(const std::string& filepath) {
     std::stringstream text;
     text << file.rdbuf();
     auto source = text.str();
+
+    Diagnostics::DiagnosticsEngine::init(source);
+
     Lexer lexer(source);
     auto tokens = lexer.Tokenize();
 
     if (!tokens.has_value()) {
-        std::println("Lexer error");
+        Diagnostics::DiagnosticsEngine::DisplayAllErrors();
         return;
     }
 
     Parser parser = Parser(tokens.value());
     auto AST = parser.Parse();
-    AST::Printer::printAST(AST);
+
+    if (auto ec = Diagnostics::DiagnosticsEngine::errorCount()) {
+        std::println("\nStopping with {} error(s):\n", ec);
+        Diagnostics::DiagnosticsEngine::DisplayAllErrors();
+        return;
+    }
+
+    AST::Printer::printAST(AST.value());
 }

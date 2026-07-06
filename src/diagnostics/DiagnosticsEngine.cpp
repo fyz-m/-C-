@@ -66,8 +66,8 @@ void DiagnosticsEngine::renderDiagnostic(Diagnostic& diagnostic) {
     if (length == 0)
         length = 1;
 
-    // If on last line of source code add new line
-    // All other lines end with '\n' so we don't have
+    // If on last line of source code, add new line
+    // all other lines end with '\n' so we don't have
     // to add it manually.
     if (diagnostic.loc.line == m_lineInfo.size() - 1)
         std::println();

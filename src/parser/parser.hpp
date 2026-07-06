@@ -71,13 +71,11 @@ class Parser {
 
     void synchronize();
 
-    using enum TokenType;
-
     std::unordered_map<TokenType, size_t> m_bindingPower{
-        {PLUS, 10},
-        {MINUS, 10},
-        {STAR, 20},
-        {SLASH, 20},
+        {TokenType::PLUS, 10},
+        {TokenType::MINUS, 10},
+        {TokenType::STAR, 20},
+        {TokenType::SLASH, 20},
     };
 };
 

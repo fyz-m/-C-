@@ -100,8 +100,12 @@ void Lexer::scanToken() {
         } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
             identifier();
         } else {
+            // TODO:
+            // Report multiple unknown chars as one Error
+            // so we don't flood the terminal with the
+            // same error
             m_hadError = true;
-            // report error
+            Diagnostics::DiagnosticsEngine::report("Unexpected character.", m_line, m_column_start);
         }
         break;
     }
@@ -178,6 +182,7 @@ void Lexer::addLineToDE() const {
 
     line_end = m_current;
     Diagnostics::DiagnosticsEngine::addLine(line_start, line_end);
+    // start of next line
     line_start = m_current;
 }
 
