@@ -32,17 +32,16 @@ class DiagnosticsEngine {
 
   public:
     static void init(std::string_view m_source);
-    static void report(Token& token, std::string_view errorMessage, ErrorType type);
     static void DisplayAllErrors();
-    static void report(std::string_view errorMessage, size_t line, size_t column);
     static void addLine(size_t lineStart, size_t lineEnd);
-
-    static void printLn(size_t line);
+    static void report(std::string_view errorMessage, size_t line, size_t column);
+    static void report(Token& token, std::string_view errorMessage);
+    static size_t errorCount();
 
     DiagnosticsEngine() = delete;
 
   private:
-    Diagnostic createDiagnostic(Token& token, std::string_view errorMessage, ErrorType type);
+    static void printLn(size_t line);
     static void renderDiagnostic(Diagnostic& diagnostic);
 };
 
