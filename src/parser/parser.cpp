@@ -55,7 +55,9 @@ StmtNodePtr Parser::parseStmt() {
 }
 
 StmtNodePtr Parser::parseReturnStmt() {
-    auto expr = parseExpr();
+    std::optional<ExprNodePtr> expr;
+    if (!check(TokenType::SEMICOLON))
+        expr = parseExpr();
     consume(TokenType::SEMICOLON, "Expected ';' after return expression.");
 
     return createAstNode<ReturnStmt>(std::move(expr));
@@ -101,8 +103,14 @@ ExprNodePtr Parser::parsePrefixExpr() {
     case FLOAT_LITERAL:
     case INTEGER_LITERAL: {
         advance();
-        return createAstNode<LiteralExpr>(previous().literal);
+        return createAstNode<LiteralExpr>(std::move(previous().literal));
     }
+
+    case IDENTIFIER: {
+        advance();
+        return createAstNode<IdentifierExpr>(std::move(previous()));
+    }
+
     default:
         Diagnostics::DiagnosticsEngine::report(peek(), "Malformed expression");
         throw ParseError();
