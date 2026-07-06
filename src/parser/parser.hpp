@@ -5,9 +5,11 @@
 #include "Ast/Stmt.hpp"
 
 #include <expected>
+#include <unordered_map>
 #include <vector>
 
 using Statements = std::expected<std::vector<StmtNodePtr>, bool>;
+
 class Parser {
 
   private:
@@ -39,7 +41,9 @@ class Parser {
 
     // Parsing expressions
 
-    ExprNodePtr parseExpr();
+    ExprNodePtr parseExpr(size_t min_bp = 0);
+
+    ExprNodePtr parsePrefixExpr();
 
     // Helpers
 
@@ -66,10 +70,15 @@ class Parser {
     bool isatEnd();
 
     void synchronize();
+
+    using enum TokenType;
+
+    std::unordered_map<TokenType, size_t> m_bindingPower{
+        {PLUS, 10},
+        {MINUS, 10},
+        {STAR, 20},
+        {SLASH, 20},
+    };
 };
 
-struct ParseError : public std::exception {
-    Token m_Token;
-    ParseError(Token& token)
-        : m_Token(token) {}
-};
+struct ParseError : public std::exception {};
