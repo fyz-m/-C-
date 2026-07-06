@@ -78,7 +78,7 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
     while (true) {
         auto& op = peek();
         auto it = m_bindingPower.find(op.type);
-        if (it == m_bindingPower.end())
+        if (it == m_bindingPower.end()) // end of expression
             break;
 
         auto op_bp = it->second;
@@ -95,20 +95,22 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
 
 ExprNodePtr Parser::parsePrefixExpr() {
 
-    ExprNodePtr node;
     using enum TokenType;
 
     switch (peek().type) {
 
     case FLOAT_LITERAL:
-    case INTEGER_LITERAL: {
-        advance();
-        return createAstNode<LiteralExpr>(std::move(previous().literal));
-    }
+    case INTEGER_LITERAL:
+        return createAstNode<LiteralExpr>(std::move(advance().literal));
 
-    case IDENTIFIER: {
+    case IDENTIFIER:
+        return createAstNode<IdentifierExpr>(std::move(advance()));
+
+    case LEFT_PAREN: {
         advance();
-        return createAstNode<IdentifierExpr>(std::move(previous()));
+        auto expr = parseExpr();
+        consume(RIGHT_PAREN, "Missing ')' after grouping expression");
+        return expr;
     }
 
     default:
