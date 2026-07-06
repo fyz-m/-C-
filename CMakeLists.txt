@@ -1,18 +1,42 @@
 cmake_minimum_required(VERSION 3.28.3)
-
 project(RVC LANGUAGES CXX)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(main src/main.cpp 
-                      src/lexer/lexer.cpp
-                      src/parser/AstPrinter.cpp
-                      src/parser/parser.cpp
-                      src/parser/Ast/Expr.cpp
-                      src/parser/Ast/Stmt.cpp
-                      src/diagnostics/DiagnosticsEngine.cpp
+# Core library
+add_library(rvc_core
+  src/lexer/lexer.cpp
+  src/parser/AstPrinter.cpp
+  src/parser/parser.cpp
+  src/parser/Ast/Expr.cpp
+  src/parser/Ast/Stmt.cpp
+  src/diagnostics/DiagnosticsEngine.cpp
 )
+target_include_directories(rvc_core PUBLIC src)
+target_compile_options(rvc_core PUBLIC -Wall -Wextra -Wpedantic -g3 -O0 -Wno-unused-parameter)
 
-target_compile_options(main  PRIVATE -Wall -Wextra -Wpedantic  -g3 -O0 -Wno-unused-parameter)
-# target_link_options(main PRIVATE -fsanitize=address,undefined)
+# Main executable (entry point)
+add_executable(main src/main.cpp)
+target_link_libraries(main PRIVATE rvc_core)
+
+# GoogleTest setup 
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG v1.17.0
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
+
+# Test executable 
+add_executable(unit_tests
+  tests/test_parser.cpp
+)
+target_link_libraries(unit_tests PRIVATE rvc_core GTest::gtest_main)
+
+include(GoogleTest)
+gtest_discover_tests(unit_tests)
