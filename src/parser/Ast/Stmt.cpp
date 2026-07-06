@@ -1,6 +1,6 @@
 #include "Stmt.hpp"
 
-ReturnStmt::ReturnStmt(ExprNodePtr value)
+ReturnStmt::ReturnStmt(std::optional<ExprNodePtr> value)
     : m_RetValue{std::move(value)} {}
 
 IfStmt::IfStmt(ExprNodePtr condition, StmtNodePtr body)

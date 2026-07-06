@@ -35,9 +35,9 @@ StmtNodePtr createAstNode(Args... args) {
 ///////////////////////
 
 struct ReturnStmt {
-    const ExprNodePtr m_RetValue;
+    std::optional<ExprNodePtr> m_RetValue = std::nullopt;
 
-    ReturnStmt(ExprNodePtr value);
+    ReturnStmt(std::optional<ExprNodePtr> value);
 };
 
 struct IfStmt {
