@@ -2,7 +2,10 @@
 #include "Ast/Expr.hpp"
 #include "Ast/Stmt.hpp"
 
+#include <utility>
 #include <vector>
+
+// Print out an Abstract-Syntax tree using post-order traversal (DFS)
 
 namespace AST {
 
@@ -27,13 +30,21 @@ struct PrintExpr {
 
 // PRINTING STATEMENTS
 struct PrintStmt {
+  private:
+    mutable size_t m_indentLevel{};
+
+    size_t indentIncrementLevel() const;
+
+  public:
     std::string operator()(const ExprStmtPtr& stmt) const;
+    std::string operator()(const BlockStmtPtr& stmt) const;
     std::string operator()(const ReturnStmtPtr& stmt) const;
     std::string operator()(const IfStmtPtr& stmt) const;
     std::string operator()(const FunctionStmtPtr& stmt) const;
+    std::string operator()(const VarDeclarationStmtPtr& stmt) const;
 
-    std::string indent(const std::string& name,
-                       std::initializer_list<const StmtNodePtr*> stmtNodes) const;
+    std::string printIndent(int offset = 0) const;
+    std::string indentAndPrint(const std::string& str, int offset = 0) const;
 };
 
 } // namespace AST

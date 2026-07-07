@@ -60,35 +60,76 @@ PrintExpr::parenthesize(const std::string& name,
 }
 
 std::string PrintStmt::operator()(const ExprStmtPtr& stmt) const {
-    return Printer::printExpr(stmt->m_Expr);
+    std::stringstream s;
+    m_indentLevel += indentIncrementLevel();
+    s << printIndent() << "ExprStmt:\n";
+    s << indentAndPrint("└─" + Printer::printExpr(stmt->m_Expr), -2);
+    m_indentLevel -= indentIncrementLevel();
+
+    return s.str();
+}
+
+std::string PrintStmt::operator()(const BlockStmtPtr& stmt) const {
+    std::stringstream s;
+    m_indentLevel += indentIncrementLevel();
+    s << printIndent() << "BlockStmt:\n";
+    for (auto& stmtNode : stmt->m_statements) {
+        s << std::visit(*this, stmtNode);
+    }
+    m_indentLevel -= indentIncrementLevel();
+    return s.str();
+}
+
+std::string PrintStmt::operator()(const VarDeclarationStmtPtr& stmt) const {
+    std::stringstream s;
+    // print type alsp
+    m_indentLevel += indentIncrementLevel();
+    s << printIndent() << "VarDeclStmt:\n";
+    s << indentAndPrint("├──Identifier \'" + stmt->m_VarName.lexeme + "\'", -2);
+    s << indentAndPrint("└──init \'" + Printer::printExpr(stmt->m_Initializer) + "\'", -2);
+    m_indentLevel -= indentIncrementLevel();
+
+    return s.str();
 }
 
 std::string PrintStmt::operator()(const ReturnStmtPtr& stmt) const {
-    if (stmt->m_RetValue.has_value())
-        return std::format("RETURN: {}", Printer::printExpr(stmt->m_RetValue.value()));
-    return std::format("RETURN (nothing)");
+    std::stringstream s;
+    std::string return_value =
+        stmt->m_RetValue.has_value() ? Printer::printExpr(stmt->m_RetValue.value()) : "none";
+
+    m_indentLevel += indentIncrementLevel();
+    s << printIndent() << "ReturnStmt\n";
+    s << indentAndPrint("└─ret " + return_value, -2);
+
+    m_indentLevel -= indentIncrementLevel();
+    return s.str();
 }
 
-std::string PrintStmt::operator()(const IfStmtPtr& stmt) const {
-    return std::format("IF\n\tCONDITION:{}\n{}", Printer::printExpr(stmt->m_Condition),
-                       indent("BODY:", {&stmt->m_Body}));
-}
+std::string PrintStmt::operator()(const IfStmtPtr& stmt) const {}
 
 std::string PrintStmt::operator()(const FunctionStmtPtr& stmt) const {
-    return std::format("FUNCTION\n  NAME = \"{}\"\n  {}", stmt->m_Identifier.lexeme,
-                       indent("BODY", {&stmt->m_Body}));
+    PrintStmt p = *this;
+    std::stringstream s;
+    m_indentLevel += indentIncrementLevel();
+    s << "FunctionStmt: " << stmt->m_Identifier.lexeme << "\n";
+    s << p(stmt->m_Body);
+    m_indentLevel -= indentIncrementLevel();
+    return s.str();
 }
 
-std::string PrintStmt::indent(const std::string& name,
-                              std::initializer_list<const StmtNodePtr*> stmtNodes) const {
-    std::stringstream s;
-    s << name;
-    for (const auto* stmt : stmtNodes) {
-        s << "\n    | ";
-        s << std::visit(PrintStmt{}, *stmt);
-    }
-    s << '\n';
-    return s.str();
+std::string PrintStmt::printIndent(int offset) const {
+    return std::string(m_indentLevel + offset, ' ');
+}
+
+size_t PrintStmt::indentIncrementLevel() const {
+    return 2;
+}
+
+std::string PrintStmt::indentAndPrint(const std::string& str, int offset) const {
+    m_indentLevel += indentIncrementLevel();
+    auto s = std::format("{}{}\n", printIndent(offset), str);
+    m_indentLevel -= indentIncrementLevel();
+    return s;
 }
 
 } // namespace AST
