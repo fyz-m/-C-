@@ -17,7 +17,7 @@ struct LineInformation {
 
 struct Diagnostic {
     Location loc{};
-    std::string_view errorMessage{};
+    std::string errorMessage;
     ErrorType type{};
 };
 
@@ -34,8 +34,8 @@ class DiagnosticsEngine {
     static void init(std::string_view m_source);
     static void DisplayAllErrors();
     static void addLine(size_t lineStart, size_t lineEnd);
-    static void report(std::string_view errorMessage, size_t line, size_t column);
-    static void report(Token& token, std::string_view errorMessage);
+    static void report(std::string&& errorMessage, size_t line, size_t column);
+    static void report(Token& token, std::string&& errorMessage);
     static size_t errorCount();
 
     DiagnosticsEngine() = delete;

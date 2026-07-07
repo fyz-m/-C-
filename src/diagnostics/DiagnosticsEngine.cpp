@@ -29,12 +29,12 @@ size_t DiagnosticsEngine::errorCount() {
     return m_errorCount;
 }
 
-void DiagnosticsEngine::report(Token& token, std::string_view errorMessage) {
+void DiagnosticsEngine::report(Token& token, std::string&& errorMessage) {
     ++m_errorCount;
-    m_Errors.emplace_back(token.loc, errorMessage, ErrorType::SyntaxError);
+    m_Errors.emplace_back(token.loc, std::move(errorMessage), ErrorType::SyntaxError);
 }
 
-void DiagnosticsEngine::report(std::string_view errorMessage, size_t line, size_t column) {
+void DiagnosticsEngine::report(std::string&& errorMessage, size_t line, size_t column) {
     ++m_errorCount;
     m_Errors.emplace_back(Location(line, column, column), errorMessage, ErrorType::LexerError);
 }
