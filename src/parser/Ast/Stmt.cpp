@@ -8,3 +8,9 @@ IfStmt::IfStmt(ExprNodePtr condition, StmtNodePtr body)
 
 FunctionStmt::FunctionStmt(Token identifier, StmtNodePtr body)
     : m_Identifier{std::move(identifier)}, m_Body{std::move(body)} {}
+
+VarDeclarationStmt::VarDeclarationStmt(Token name, ExprNodePtr initializer)
+    : m_VarName{std::move(name)}, m_Initializer{std::move(initializer)} {}
+
+BlockStmt::BlockStmt(std::vector<StmtNodePtr> statements)
+    : m_statements{std::move(statements)} {}

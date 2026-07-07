@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <variant>
+#include <vector>
 
 // This file contains the declarations of AST nodes for Statements
 
@@ -11,19 +12,25 @@ struct IfStmt;
 struct ReturnStmt;
 struct ExprStmt;
 struct FunctionStmt;
+struct VarDeclarationStmt;
+struct BlockStmt;
 
 // Syntatic sugar for node pointers
 using IfStmtPtr = std::unique_ptr<IfStmt>;
 using ReturnStmtPtr = std::unique_ptr<ReturnStmt>;
 using ExprStmtPtr = std::unique_ptr<ExprStmt>;
 using FunctionStmtPtr = std::unique_ptr<FunctionStmt>;
+using VarDeclarationStmtPtr = std::unique_ptr<VarDeclarationStmt>;
+using BlockStmtPtr = std::unique_ptr<BlockStmt>;
 
 // Using variant + visit instead of dynamic polymorphism visitor pattern
-using StmtNodePtr = std::variant<IfStmtPtr, ReturnStmtPtr, ExprStmtPtr, FunctionStmtPtr>;
+using StmtNodePtr = std::variant<IfStmtPtr, ReturnStmtPtr, ExprStmtPtr, FunctionStmtPtr,
+                                 VarDeclarationStmtPtr, BlockStmtPtr>;
 
 template <typename T>
 concept StmtType = std::same_as<T, IfStmt> || std::same_as<T, ReturnStmt> ||
-                   std::same_as<T, ExprStmt> || std::same_as<T, FunctionStmt>;
+                   std::same_as<T, ExprStmt> || std::same_as<T, FunctionStmt> ||
+                   std::same_as<T, VarDeclarationStmt> || std::same_as<T, BlockStmt>;
 
 template <StmtType T, typename... Args>
 StmtNodePtr createAstNode(Args... args) {
@@ -52,6 +59,18 @@ struct FunctionStmt {
     StmtNodePtr m_Body;
 
     FunctionStmt(Token identifier, StmtNodePtr body);
+};
+
+struct VarDeclarationStmt {
+    Token m_VarName;
+    ExprNodePtr m_Initializer; // std::optional ?
+
+    VarDeclarationStmt(Token name, ExprNodePtr initializer);
+};
+
+struct BlockStmt {
+    std::vector<StmtNodePtr> m_statements;
+    BlockStmt(std::vector<StmtNodePtr> statements);
 };
 
 struct ExprStmt {
