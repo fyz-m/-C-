@@ -23,6 +23,7 @@ struct PrintExpr {
     std::string operator()(const BinaryExprPtr& expr) const;
     std::string operator()(const UnaryExprPtr& expr) const;
     std::string operator()(const IdentifierExprPtr& expr) const;
+    std::string operator()(const AssignmentExprPtr& expr) const;
 
     std::string parenthesize(const std::string& name,
                              std::initializer_list<const ExprNodePtr*> exprNodes) const;
