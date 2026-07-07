@@ -54,7 +54,7 @@ class Parser {
 
     bool check(TokenType expected);
 
-    Token& consume(TokenType expected, std::string_view errorMessage);
+    Token& consume(TokenType expected, const std::string& error);
 
     // Return current token and consume it
     Token& advance();
@@ -69,12 +69,19 @@ class Parser {
 
     bool isatEnd();
 
+    // Reports error to diag engine and
+    // sets parser into to error recovery
+    // by throwing ParseError()
+    void reportError(Token& token, std::string&& errorMessage);
+
     void synchronize();
 
     struct BindingPower {
         size_t lbp;
         size_t rbp;
     };
+
+    size_t unaryBindingPower() const;
 
     std::unordered_map<TokenType, BindingPower> m_bindingPower{
         {TokenType::PLUS, {.lbp = 10, .rbp = 11}},

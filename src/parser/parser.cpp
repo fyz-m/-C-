@@ -77,6 +77,12 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
 
     while (true) {
         auto& op = peek();
+
+        // Two identifiers or literals in a row
+        // E.g "1 + 2 3"
+        if (op.type == TokenType::IDENTIFIER || op.literal.index() != 0)
+            reportError(peek(), "Malformed expression");
+
         auto it = m_bindingPower.find(op.type);
 
         // If next token is not an infix operator,
@@ -108,6 +114,13 @@ ExprNodePtr Parser::parsePrefixExpr() {
     case IDENTIFIER:
         return createAstNode<IdentifierExpr>(std::move(advance()));
 
+    // Unary
+    case MINUS: {
+        auto& op = advance();
+        auto expr = parseExpr(unaryBindingPower());
+        return createAstNode<UnaryExpr>(std::move(op), std::move(expr));
+    }
+
     case LEFT_PAREN: {
         advance();
         auto expr = parseExpr();
@@ -116,9 +129,12 @@ ExprNodePtr Parser::parsePrefixExpr() {
     }
 
     default:
-        Diagnostics::DiagnosticsEngine::report(peek(), "Malformed expression");
-        throw ParseError();
+        reportError(peek(), "Malformed expression");
     }
+}
+
+size_t Parser::unaryBindingPower() const {
+    return 100;
 }
 
 bool Parser::match(TokenType expected) {
@@ -145,12 +161,15 @@ bool Parser::check(TokenType expected) {
     return peek().type == expected;
 }
 
-Token& Parser::consume(TokenType expected, std::string error) {
+Token& Parser::consume(TokenType expected, const std::string& error) {
     if (peek().type == expected)
         return m_Tokens[m_Current++];
 
-    auto s = std::format("{}, found {} instead.", error, peek().lexeme);
-    reportError(peek(), s);
+    std::string s =
+        check(TokenType::END_OF_FILE) ? error : error + ", found '" + peek().lexeme + "' instead";
+
+    reportError(peek(), std::move(s));
+    return peek();
 }
 
 Token& Parser::advance() {
@@ -171,15 +190,15 @@ bool Parser::isatEnd() {
     return peek().type == TokenType::END_OF_FILE;
 }
 
-void Parser::reportError(Token& token, std::string_view errorMessage) {
+void Parser::reportError(Token& token, std::string&& errorMessage) {
 
-    auto* err_tok = &peek();
+    auto* err_tok = &token;
     if (err_tok->type == TokenType::END_OF_FILE)
         // Ignore EOF token because diag engine will attempt
         // to read past source string (UB)
         err_tok = &previous();
 
-    Diagnostics::DiagnosticsEngine::report(*err_tok, errorMessage);
+    Diagnostics::DiagnosticsEngine::report(*err_tok, std::move(errorMessage));
     throw ParseError();
 }
 
