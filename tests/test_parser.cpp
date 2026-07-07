@@ -78,9 +78,12 @@ INSTANTIATE_TEST_SUITE_P(
 
         ExprTestCase("unary_binds_tighter_than_mult_2",
                         "-2 * -3 / -4",
-                        "(/ (* (- 2) (- 3)) (- 4))")
-                        
-        // ExprTestCase("double_unary", "--5", "(- (- 5))"),
+                        "(/ (* (- 2) (- 3)) (- 4))"),
+
+        ExprTestCase("decrement_unary", "--5", "(-- 5)"),
+        ExprTestCase("tilde_unary", "-~var", "(- (~ var))"),
+        ExprTestCase("decrement_and_negation_unary", "---5", "(-- (- 5))"),
+        ExprTestCase("negate_then_decrement_unary", "-(--5)", "(- (-- 5))")
         // ExprTestCase("logical_not", "!1", "(! 1)"),
 
         // // Comparisons
