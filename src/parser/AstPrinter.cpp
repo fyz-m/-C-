@@ -36,6 +36,10 @@ std::string PrintExpr::operator()(const BinaryExprPtr& expr) const {
     return parenthesize(expr->m_operation.lexeme, {&expr->m_leftNode, &expr->m_rightNode});
 }
 
+std::string PrintExpr::operator()(const UnaryExprPtr& expr) const {
+    return parenthesize(expr->m_operation.lexeme, {&expr->m_expression});
+}
+
 std::string PrintExpr::operator()(const IdentifierExprPtr& expr) const {
     return expr->m_Name.lexeme;
 }
