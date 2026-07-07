@@ -84,9 +84,8 @@ class Parser {
     size_t unaryBindingPower() const;
 
     std::unordered_map<TokenType, BindingPower> m_bindingPower{
-        {TokenType::PLUS, {.lbp = 10, .rbp = 11}},
-        {TokenType::MINUS, {.lbp = 10, .rbp = 11}},
-        {TokenType::STAR, {.lbp = 20, .rbp = 21}},
+        {TokenType::EQUAL, {.lbp = 5, .rbp = 5}},   {TokenType::PLUS, {.lbp = 10, .rbp = 11}},
+        {TokenType::MINUS, {.lbp = 10, .rbp = 11}}, {TokenType::STAR, {.lbp = 20, .rbp = 21}},
         {TokenType::SLASH, {.lbp = 20, .rbp = 21}},
     };
 };
