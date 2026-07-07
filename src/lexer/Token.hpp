@@ -37,13 +37,15 @@ enum class TokenType {
     LEFT_BRACE,
     RIGHT_BRACE,
     COMMA,
-    MINUS,
+    TILDE,
     PLUS,
     SEMICOLON,
     SLASH,
     STAR,
 
     // One or two character tokens.
+    MINUS,
+    MINUS_MINUS,
     BANG,
     BANG_EQUAL,
     EQUAL,
