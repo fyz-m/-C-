@@ -65,7 +65,7 @@ StmtNodePtr Parser::parseReturnStmt() {
 
 StmtNodePtr Parser::parseExprStmt() {
     auto expr = parseExpr();
-    consume(TokenType::SEMICOLON, "Expected ';' after expression.");
+    consume(TokenType::SEMICOLON, "Expected expression");
 
     return createAstNode<ExprStmt>(std::move(expr));
 }
@@ -84,12 +84,11 @@ ExprNodePtr Parser::parseExpr(size_t min_bp) {
         if (it == m_bindingPower.end())
             break;
 
-        auto op_bp = it->second;
-        if (op_bp.lbp < min_bp)
+        if (it->second.lbp < min_bp)
             break;
 
         advance();
-        auto rightNode = parseExpr(op_bp.rbp); //
+        auto rightNode = parseExpr(it->second.rbp); //
         leftNode =
             createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightNode));
     }
@@ -146,16 +145,12 @@ bool Parser::check(TokenType expected) {
     return peek().type == expected;
 }
 
-Token& Parser::consume(TokenType expected, std::string_view errorMessage) {
+Token& Parser::consume(TokenType expected, std::string error) {
     if (peek().type == expected)
         return m_Tokens[m_Current++];
 
-    auto* err_tok = &peek();
-    if (err_tok->type == TokenType::END_OF_FILE)
-        err_tok = &previous();
-
-    Diagnostics::DiagnosticsEngine::report(*err_tok, errorMessage);
-    throw ParseError();
+    auto s = std::format("{}, found {} instead.", error, peek().lexeme);
+    reportError(peek(), s);
 }
 
 Token& Parser::advance() {
@@ -174,6 +169,18 @@ Token& Parser::peek() {
 
 bool Parser::isatEnd() {
     return peek().type == TokenType::END_OF_FILE;
+}
+
+void Parser::reportError(Token& token, std::string_view errorMessage) {
+
+    auto* err_tok = &peek();
+    if (err_tok->type == TokenType::END_OF_FILE)
+        // Ignore EOF token because diag engine will attempt
+        // to read past source string (UB)
+        err_tok = &previous();
+
+    Diagnostics::DiagnosticsEngine::report(*err_tok, errorMessage);
+    throw ParseError();
 }
 
 void Parser::synchronize() {
