@@ -45,11 +45,11 @@ void Lexer::scanToken() {
     case ',':
         addToken(TokenType::COMMA);
         break;
-    case '-':
-        addToken(TokenType::MINUS);
-        break;
     case '+':
         addToken(TokenType::PLUS);
+        break;
+    case '~':
+        addToken(TokenType::TILDE);
         break;
     case ';':
         addToken(TokenType::SEMICOLON);
@@ -58,6 +58,9 @@ void Lexer::scanToken() {
         addToken(TokenType::STAR);
         break;
 
+    case '-':
+        addToken(match('-') ? TokenType::MINUS_MINUS : TokenType::MINUS);
+        break;
     case '!':
         addToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);
         break;
