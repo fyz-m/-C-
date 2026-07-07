@@ -28,7 +28,7 @@ class Parser {
 
     StmtNodePtr parseFunctionDecl();
 
-    // StmtNodePtr parseVariableDecl();
+    StmtNodePtr parseVariableDecl();
 
     StmtNodePtr parseStmt();
 

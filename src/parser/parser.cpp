@@ -15,13 +15,13 @@ Statements Parser::Parse() {
 }
 
 std::optional<StmtNodePtr> Parser::parseDeclaration() {
-
+    using enum TokenType;
     try {
 
-        if (match(TokenType::INT)) {
-
+        if (match(DEF))
             return parseFunctionDecl();
-        }
+        if (match(INT) || match(FLOAT))
+            return parseVariableDecl();
 
         return parseStmt();
 
@@ -42,6 +42,14 @@ StmtNodePtr Parser::parseFunctionDecl() {
     consume(TokenType::RIGHT_BRACE, "Expect '}' After function body.");
 
     return createAstNode<FunctionStmt>(std::move(name), std::move(body));
+}
+
+StmtNodePtr Parser::parseVariableDecl() {
+    Token& name = consume(TokenType::IDENTIFIER, "Expected identifier after variable declaration");
+    consume(TokenType::EQUAL, "Expected '=' to intialize variable");
+    auto initializer = parseExpr();
+
+    return createAstNode<VarDeclarationStmt>(std::move(name), std::move(initializer));
 }
 
 StmtNodePtr Parser::parseStmt() {
