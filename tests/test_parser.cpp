@@ -83,7 +83,11 @@ INSTANTIATE_TEST_SUITE_P(
         ExprTestCase("decrement_unary", "--5", "(-- 5)"),
         ExprTestCase("tilde_unary", "-~var", "(- (~ var))"),
         ExprTestCase("decrement_and_negation_unary", "---5", "(-- (- 5))"),
-        ExprTestCase("negate_then_decrement_unary", "-(--5)", "(- (-- 5))")
+        ExprTestCase("negate_then_decrement_unary", "-(--5)", "(- (-- 5))"),
+
+        ExprTestCase{"assignment", "x = 4", "(= x 4)"},
+        ExprTestCase{"assignment_2", "a = 1 + 2 * (3 - 4) / 5 / 3", "(= a (+ 1 (/ (/ (* 2 (- 3 4)) 5) 3)))"},
+        ExprTestCase{"assignment_is_right_associative", "a=b=c+d", "(= a (= b (+ c d)))"},
         // ExprTestCase("logical_not", "!1", "(! 1)"),
 
         // // Comparisons
@@ -111,13 +115,12 @@ INSTANTIATE_TEST_SUITE_P(
         // ExprTestCase("full_precedence_stack",
         //                 "1 + 2 * 3 < 4 * 5 && 6 == 6",
         //                 "(&& (< (+ 1 (* 2 3)) (* 4 5)) (== 6 6))"),
-        // ExprTestCase("deeply_nested_arithmetic",
-        //                 "1 + 2 * (3 - 4) / 5",
-        //                 "(+ 1 (/ (* 2 (- 3 4)) 5))"),
 
-        // // Edge cases
-        // ExprTestCase("single_literal", "42", "42"),
-        // ExprTestCase("single_negative_literal", "-42", "(- 42)")
+        ExprTestCase("deeply_nested_arithmetic",
+                        "1 + 2 * (3 - 4) / 5",
+                        "(+ 1 (/ (* 2 (- 3 4)) 5))"),
+        ExprTestCase{"int_literal_only", "4505", "4505"},
+        ExprTestCase{"float_literal_only", "3.14", "3.140000"}
     ),
 
         [](const ::testing::TestParamInfo<ExprTestCase>& info) {
