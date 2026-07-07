@@ -71,6 +71,7 @@ class Lexer {
                                                            {"return", TokenType::RETURN},
                                                            {"while", TokenType::WHILE},
                                                            {"break", TokenType::BREAK},
+                                                           {"def", TokenType::DEF},
                                                            {"void", TokenType::VOID},
                                                            {"int", TokenType::INT},
                                                            {"float", TokenType::FLOAT}}};

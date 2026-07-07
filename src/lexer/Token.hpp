@@ -68,6 +68,7 @@ enum class TokenType {
     FOR,
     RETURN,
     BREAK,
+    DEF,
 
     // Keywords - types
     VOID,
