@@ -34,7 +34,7 @@ class Parser {
 
     StmtNodePtr parseReturnStmt();
 
-    // StmtNodePtr parseIfStmt();
+    std::vector<StmtNodePtr> parseBlock();
 
     StmtNodePtr parseExprStmt();
 

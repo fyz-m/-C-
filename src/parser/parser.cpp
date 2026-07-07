@@ -38,8 +38,7 @@ StmtNodePtr Parser::parseFunctionDecl() {
     consume(TokenType::RIGHT_PAREN, "Expect ')'");
     consume(TokenType::LEFT_BRACE, "Expect '{'.");
 
-    auto body = parseStmt();
-    consume(TokenType::RIGHT_BRACE, "Expect '}' After function body.");
+    auto body = std::make_unique<BlockStmt>(parseBlock());
 
     return createAstNode<FunctionStmt>(std::move(name), std::move(body));
 }
@@ -48,6 +47,7 @@ StmtNodePtr Parser::parseVariableDecl() {
     Token& name = consume(TokenType::IDENTIFIER, "Expected identifier after variable declaration");
     consume(TokenType::EQUAL, "Expected '=' to intialize variable");
     auto initializer = parseExpr();
+    consume(TokenType::SEMICOLON, "Expected ';' after variable initializer");
 
     return createAstNode<VarDeclarationStmt>(std::move(name), std::move(initializer));
 }
@@ -58,6 +58,8 @@ StmtNodePtr Parser::parseStmt() {
     //     return parseIfStmt();
     if (match(TokenType::RETURN))
         return parseReturnStmt();
+    if (match(TokenType::LEFT_BRACE))
+        return createAstNode<BlockStmt>(parseBlock());
 
     return parseExprStmt();
 }
@@ -69,6 +71,17 @@ StmtNodePtr Parser::parseReturnStmt() {
     consume(TokenType::SEMICOLON, "Expected ';' after return expression.");
 
     return createAstNode<ReturnStmt>(std::move(expr));
+}
+
+std::vector<StmtNodePtr> Parser::parseBlock() {
+
+    std::vector<StmtNodePtr> statements;
+    while (!check(TokenType::RIGHT_BRACE) && !isatEnd())
+        if (auto decl = parseDeclaration())
+            statements.push_back(std::move(decl.value()));
+
+    consume(TokenType::RIGHT_BRACE, "Missing closing '}'");
+    return statements;
 }
 
 StmtNodePtr Parser::parseExprStmt() {
@@ -139,7 +152,7 @@ ExprNodePtr Parser::parsePrefixExpr() {
     }
 
     default:
-        reportError(peek(), "Malformed expression");
+        reportError(peek(), "Malformed or missing expression");
     }
 }
 
