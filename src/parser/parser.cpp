@@ -115,6 +115,8 @@ ExprNodePtr Parser::parsePrefixExpr() {
         return createAstNode<IdentifierExpr>(std::move(advance()));
 
     // Unary
+    case TILDE:
+    case MINUS_MINUS:
     case MINUS: {
         auto& op = advance();
         auto expr = parseExpr(unaryBindingPower());
