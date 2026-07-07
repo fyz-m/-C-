@@ -59,16 +59,27 @@ INSTANTIATE_TEST_SUITE_P(
         ExprTestCase("nested_parens",
                         "((1 + 2) * (3 - 4))",
                         "(* (+ 1 2) (- 3 4))"),
-        ExprTestCase("redundant_parens", "(((5)))", "5")
+        ExprTestCase("redundant_parens", "(((5)))", "5"),
 
-        // // Unary operators
-        // ExprTestCase("unary_negation", "-5", "(- 5)"),
-        // ExprTestCase("unary_negation_in_expr",
-        //                 "-5 + 3",
-        //                 "(+ (- 5) 3)"),
-        // ExprTestCase("unary_binds_tighter_than_mult",
-        //                 "-2 * 3",
-        //                 "(* (- 2) 3)"),
+        // Unary operators
+        ExprTestCase("unary_negation", "-5", "(- 5)"),
+
+        ExprTestCase("unary_negation_in_expr",
+                        "-5 + 3",
+                        "(+ (- 5) 3)"),
+
+        ExprTestCase("unary_negation_in_expr_2",
+                        "10 + -3 - -4",
+                        "(- (+ 10 (- 3)) (- 4))"),
+
+        ExprTestCase("unary_binds_tighter_than_mult",
+                        "-2 * 3",
+                        "(* (- 2) 3)"),
+
+        ExprTestCase("unary_binds_tighter_than_mult_2",
+                        "-2 * -3 / -4",
+                        "(/ (* (- 2) (- 3)) (- 4))")
+                        
         // ExprTestCase("double_unary", "--5", "(- (- 5))"),
         // ExprTestCase("logical_not", "!1", "(! 1)"),
 
