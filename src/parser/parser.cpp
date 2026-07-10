@@ -1,6 +1,7 @@
 #include "parser.hpp"
 
 #include "../diagnostics/DiagnosticsEngine.hpp"
+#include "Ast/CreateASTnode.hpp"
 
 Statements Parser::Parse() {
 
@@ -31,9 +32,11 @@ std::optional<StmtNodePtr> Parser::parseDeclaration() {
     }
 }
 
+// def identifier(args...) -> returnType {}
 StmtNodePtr Parser::parseFunctionDecl() {
     Token& name = consume(TokenType::IDENTIFIER, "Expect identifier after function declaration.");
     consume(TokenType::LEFT_PAREN, "Expected '(' after function identifier");
+    // parse args
     consume(TokenType::VOID, "Expected 'void'");
     consume(TokenType::RIGHT_PAREN, "Expect ')'");
     consume(TokenType::LEFT_BRACE, "Expect '{'.");
@@ -86,7 +89,7 @@ std::vector<StmtNodePtr> Parser::parseBlock() {
 
 StmtNodePtr Parser::parseExprStmt() {
     auto expr = parseExpr();
-    consume(TokenType::SEMICOLON, "Expected expression");
+    consume(TokenType::SEMICOLON, "Expected ';' after expression");
 
     return createAstNode<ExprStmt>(std::move(expr));
 }
@@ -208,7 +211,7 @@ ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
             auto rightExpr = parseExpr(getBindingPower(EQUAL));
             return createAstNode<AssignmentExpr>(std::move(*identifierNode), std::move(rightExpr));
         }
-        reportError(previous(), "Invalid assignment target (can only assign to variables)");
+        reportError(previous(), "Expression not assignable");
     }
 
     case IDENTIFIER:
@@ -294,16 +297,16 @@ bool Parser::isatEnd() {
     return peek().type == TokenType::END_OF_FILE;
 }
 
-void Parser::reportError(Token& token, std::string&& errorMessage) {
-
+void Parser::reportError(Token& token, std::string&& errorMessage, bool recover) {
     auto* err_tok = &token;
+    // Ignore EOF token because diag engine will attempt
+    // to read past source string (UB)
     if (err_tok->type == TokenType::END_OF_FILE)
-        // Ignore EOF token because diag engine will attempt
-        // to read past source string (UB)
         err_tok = &previous();
 
     Diagnostics::DiagnosticsEngine::report(*err_tok, std::move(errorMessage));
-    throw ParseError();
+    if (recover)
+        throw ParseError();
 }
 
 void Parser::synchronize() {
