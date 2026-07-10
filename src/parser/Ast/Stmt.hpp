@@ -27,16 +27,6 @@ using BlockStmtPtr = std::unique_ptr<BlockStmt>;
 using StmtNodePtr = std::variant<IfStmtPtr, ReturnStmtPtr, ExprStmtPtr, FunctionStmtPtr,
                                  VarDeclarationStmtPtr, BlockStmtPtr>;
 
-template <typename T>
-concept StmtType = std::same_as<T, IfStmt> || std::same_as<T, ReturnStmt> ||
-                   std::same_as<T, ExprStmt> || std::same_as<T, FunctionStmt> ||
-                   std::same_as<T, VarDeclarationStmt> || std::same_as<T, BlockStmt>;
-
-template <StmtType T, typename... Args>
-StmtNodePtr createAstNode(Args... args) {
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
 ///////////////////////
 // NODE DECLARATIONS //
 ///////////////////////

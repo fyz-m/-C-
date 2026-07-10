@@ -24,19 +24,6 @@ using AssignmentExprPtr = std::unique_ptr<AssignmentExpr>;
 using ExprNodePtr =
     std::variant<BinaryExprPtr, UnaryExprPtr, LiteralExprPtr, IdentifierExprPtr, AssignmentExprPtr>;
 
-// Helper method to create an Expression node as a variant
-// Using template so I don't need to make a new function for every expression node
-// E.g createBinaryExpr, createIdentifierExpr etc.
-template <typename T>
-concept ExprType =
-    std::same_as<T, BinaryExpr> || std::same_as<T, UnaryExpr> || std::same_as<T, LiteralExpr> ||
-    std::same_as<T, IdentifierExpr> || std::same_as<T, AssignmentExpr>;
-
-template <ExprType T, typename... Args>
-ExprNodePtr createAstNode(Args... args) {
-    return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
 ///////////////////////
 // NODE DECLARATIONS //
 ///////////////////////
