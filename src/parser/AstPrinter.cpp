@@ -45,7 +45,8 @@ std::string PrintExpr::operator()(const IdentifierExprPtr& expr) const {
 }
 
 std::string PrintExpr::operator()(const AssignmentExprPtr& expr) const {
-    return parenthesize("=", {&expr->m_Value});
+    std::string name = "= " + expr->m_Identifier->m_Name.lexeme;
+    return parenthesize(name, {&expr->m_Value});
 }
 
 // (name expr...)
