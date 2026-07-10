@@ -9,6 +9,7 @@
 #include <vector>
 
 using Statements = std::expected<std::vector<StmtNodePtr>, bool>;
+
 class Parser {
 
   private:
@@ -72,17 +73,18 @@ class Parser {
     // Reports error to diag engine and
     // sets parser into to error recovery
     // by throwing ParseError()
-    void reportError(Token& token, std::string&& errorMessage);
+    void reportError(Token& token, std::string&& errorMessage, bool recover = true);
 
     void synchronize();
 
     int getBindingPower(TokenType _operator);
+
+    static constexpr int UNARY_BP = 100;
 
     std::unordered_map<TokenType, int> m_BindingPower{
         {TokenType::EQUAL, 5}, {TokenType::PLUS, 10},  {TokenType::MINUS, 10},
         {TokenType::STAR, 20}, {TokenType::SLASH, 20},
     };
 };
-constexpr int UNARY_BP = 100;
 
 struct ParseError : public std::exception {};
