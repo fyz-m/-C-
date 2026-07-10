@@ -68,7 +68,7 @@ StmtNodePtr Parser::parseReturnStmt() {
     std::optional<ExprNodePtr> expr;
     if (!check(TokenType::SEMICOLON))
         expr = parseExpr();
-    consume(TokenType::SEMICOLON, "Expected ';' after return expression.");
+    consume(TokenType::SEMICOLON, "Expected ';' after return statement");
 
     return createAstNode<ReturnStmt>(std::move(expr));
 }
@@ -90,38 +90,56 @@ StmtNodePtr Parser::parseExprStmt() {
 
     return createAstNode<ExprStmt>(std::move(expr));
 }
+/* 1 + 2 + 3
+parseExpr1 called
+parsePrefix returns literal<1>
+minbp == 0
+consume +
+call parseinfix, passing in the current node literal<1>
+parseinfix 1
+    match on +
+    call parseExpr (bp(+) + 1 )
 
+parseExpr2
+parsePrefix returns literal<2>
+check bindingpower 10 >= 11 -> false
+return literal <2>
+
+parseinfix1 returns binary<1 + 2>
+
+parseExpr1
+now leftnode = binary<1 + 2>
+loop again as bindingpower of + >= 0
+call parseInifx passing in leftnode
+    match +
+    -> call parseExpr(11)
+        -> return parsePrefix() -> literal<3>
+    return new binary node ( + (+ 1 2) 3)
+
+parseExpr1
+leftnode = binary node ( + (+ 1 2) 3)
+bindingpower() >= 0?  (bindingpower returns -1 for end of expr)
+-> false -> return leftnode
+
+*/
 // Operator Precedence parsing (Pratt Parser)
-ExprNodePtr Parser::parseExpr(size_t min_bp) {
+ExprNodePtr Parser::parseExpr(int minBindingPower) {
 
     auto leftNode = parsePrefixExpr();
 
-    while (true) {
-        auto& op = peek();
-
-        // Two identifiers or literals in a row
-        // E.g "1 + 2 3"
-        if (op.type == TokenType::IDENTIFIER || op.literal.index() != 0)
-            reportError(peek(), "Malformed expression");
-
-        auto it = m_bindingPower.find(op.type);
-
-        // If next token is not an infix operator,
-        // finish parsing and return the expression tree
-        if (it == m_bindingPower.end())
-            break;
-
-        if (it->second.lbp < min_bp)
-            break;
-
-        advance();
-        auto rightNode = parseExpr(it->second.rbp); //
-        leftNode =
-            createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightNode));
+    while (getBindingPower(peek().type) >= minBindingPower) {
+        leftNode = parseInfixExpr(std::move(leftNode));
     }
     return leftNode;
 }
 
+/*
+Parsing and creating leaf expression:
+- Literals e.g 7
+- Unary    e.g -5)
+- Grouping e.g '('expr')'
+    - Included here so we
+*/
 ExprNodePtr Parser::parsePrefixExpr() {
 
     using enum TokenType;
@@ -132,18 +150,23 @@ ExprNodePtr Parser::parsePrefixExpr() {
     case INTEGER_LITERAL:
         return createAstNode<LiteralExpr>(std::move(advance().literal));
 
-    case IDENTIFIER:
+    case IDENTIFIER: {
         return createAstNode<IdentifierExpr>(std::move(advance()));
+    }
 
     // Unary
     case TILDE:
     case MINUS_MINUS:
     case MINUS: {
         auto& op = advance();
-        auto expr = parseExpr(unaryBindingPower());
+        // Call parseExpr() with a very high binding power so it returns the next
+        // prefix expression e.g literal(2).
+        // Equivalent to calling parsePrefixExpr() recursively
+        auto expr = parseExpr(UNARY_BP);
         return createAstNode<UnaryExpr>(std::move(op), std::move(expr));
     }
 
+    // Grouping
     case LEFT_PAREN: {
         advance();
         auto expr = parseExpr();
@@ -152,13 +175,67 @@ ExprNodePtr Parser::parsePrefixExpr() {
     }
 
     default:
-        reportError(peek(), "Malformed or missing expression");
+        reportError(peek(), "Expected expression");
     }
 }
 
-size_t Parser::unaryBindingPower() const {
-    return 100;
+/*
+Parsing and creating non-leaf expression nodes
+We take the left subtree of a non-leaf expression
+*/
+ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
+
+    using enum TokenType;
+
+    switch (peek().type) {
+
+    // Binary
+    case STAR:
+    case SLASH:
+    case MINUS:
+    case PLUS: {
+        auto& op = advance();
+        // Add one to the binding power so expro of a chained operator is left associative
+        // (e.g 1 + 2 + 3)
+        // In the call to parseExpr(), the call will only evaluate a leaf expr node and return that
+        auto rightExpr = parseExpr(getBindingPower(op.type) + 1);
+        return createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightExpr));
+    }
+    // Assignment
+    case EQUAL: {
+        if (auto* identifierNode = std::get_if<IdentifierExprPtr>(&leftNode)) {
+            advance();
+            auto rightExpr = parseExpr(getBindingPower(EQUAL));
+            return createAstNode<AssignmentExpr>(std::move(*identifierNode), std::move(rightExpr));
+        }
+        reportError(previous(), "Invalid assignment target (can only assign to variables)");
+    }
+
+    case IDENTIFIER:
+    case TILDE:
+    case MINUS_MINUS:
+    case LEFT_PAREN:
+    case FLOAT_LITERAL:
+    case INTEGER_LITERAL:
+        reportError(peek(), "Malformed expression (missing operator)");
+
+    default:
+        reportError(peek(), "Malformed infix expression");
+    }
 }
+
+int Parser::getBindingPower(TokenType _operator) {
+    auto it = m_BindingPower.find(_operator);
+
+    // Return -1 for any token that isn't a valid operator in an expression
+    // to indicate the expression has finished.
+    // minBindingPower will always be >= 0, so returning -1 will cause the
+    // whileloop condition in parseExpr to evaluate to false, returning the
+    // expression subtree it has generated
+    if (it == m_BindingPower.end())
+        return -1;
+    return it->second;
+};
 
 bool Parser::match(TokenType expected) {
 
@@ -207,6 +284,10 @@ Token& Parser::previous() {
 
 Token& Parser::peek() {
     return m_Tokens[m_Current];
+}
+
+Token& Parser::peekNext() {
+    return m_Tokens[m_Current + 1];
 }
 
 bool Parser::isatEnd() {
