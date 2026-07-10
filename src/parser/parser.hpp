@@ -9,7 +9,6 @@
 #include <vector>
 
 using Statements = std::expected<std::vector<StmtNodePtr>, bool>;
-
 class Parser {
 
   private:
@@ -40,13 +39,14 @@ class Parser {
 
     // Parsing expressions
 
-    ExprNodePtr parseExpr(size_t min_bp = 0);
+    ExprNodePtr parseExpr(int minBindingPower = 0);
 
     ExprNodePtr parsePrefixExpr();
 
-  private:
-    // Helpers
+    ExprNodePtr parseInfixExpr(ExprNodePtr leftNode);
 
+    // Helpers
+  private:
     // Conditional advance/consume
     bool match(TokenType expected);
 
@@ -76,18 +76,13 @@ class Parser {
 
     void synchronize();
 
-    struct BindingPower {
-        size_t lbp;
-        size_t rbp;
-    };
+    int getBindingPower(TokenType _operator);
 
-    size_t unaryBindingPower() const;
-
-    std::unordered_map<TokenType, BindingPower> m_bindingPower{
-        {TokenType::EQUAL, {.lbp = 5, .rbp = 5}},   {TokenType::PLUS, {.lbp = 10, .rbp = 11}},
-        {TokenType::MINUS, {.lbp = 10, .rbp = 11}}, {TokenType::STAR, {.lbp = 20, .rbp = 21}},
-        {TokenType::SLASH, {.lbp = 20, .rbp = 21}},
+    std::unordered_map<TokenType, int> m_BindingPower{
+        {TokenType::EQUAL, 5}, {TokenType::PLUS, 10},  {TokenType::MINUS, 10},
+        {TokenType::STAR, 20}, {TokenType::SLASH, 20},
     };
 };
+constexpr int UNARY_BP = 100;
 
 struct ParseError : public std::exception {};
