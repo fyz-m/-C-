@@ -56,9 +56,12 @@ CheckOptions:
     value: camelCase
 
   - key: readability-identifier-naming.MemberCase
-    value: PascalCase
-  - key: readability-identifier-naming.MemberPrefix
-    value: m_
+    value: CamelCase
+
+  - key:             readability-identifier-naming.PrivateMemberCase
+    value:           CamelCase
+  - key:             readability-identifier-naming.PrivateMemberPrefix
+    value:           'm_'
 
   - key: readability-identifier-naming.ParameterCase
     value: camelCase
