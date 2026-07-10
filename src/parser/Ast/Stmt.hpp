@@ -56,9 +56,9 @@ struct IfStmt {
 
 struct FunctionStmt {
     Token m_Identifier;
-    StmtNodePtr m_Body;
+    BlockStmtPtr m_Body;
 
-    FunctionStmt(Token identifier, StmtNodePtr body);
+    FunctionStmt(Token identifier, BlockStmtPtr body);
 };
 
 struct VarDeclarationStmt {
