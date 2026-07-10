@@ -11,22 +11,26 @@ struct BinaryExpr;
 struct UnaryExpr;
 struct LiteralExpr;
 struct IdentifierExpr;
+struct AssignmentExpr;
 
 // Syntatic sugar for node pointers
 using BinaryExprPtr = std::unique_ptr<BinaryExpr>;
 using UnaryExprPtr = std::unique_ptr<UnaryExpr>;
 using LiteralExprPtr = std::unique_ptr<LiteralExpr>;
 using IdentifierExprPtr = std::unique_ptr<IdentifierExpr>;
+using AssignmentExprPtr = std::unique_ptr<AssignmentExpr>;
 
 // Using variant + visit instead of dynamic polymorphism (visitor pattern)
-using ExprNodePtr = std::variant<BinaryExprPtr, UnaryExprPtr, LiteralExprPtr, IdentifierExprPtr>;
+using ExprNodePtr =
+    std::variant<BinaryExprPtr, UnaryExprPtr, LiteralExprPtr, IdentifierExprPtr, AssignmentExprPtr>;
 
 // Helper method to create an Expression node as a variant
 // Using template so I don't need to make a new function for every expression node
 // E.g createBinaryExpr, createIdentifierExpr etc.
 template <typename T>
-concept ExprType = std::same_as<T, BinaryExpr> || std::same_as<T, UnaryExpr> ||
-                   std::same_as<T, LiteralExpr> || std::same_as<T, IdentifierExpr>;
+concept ExprType =
+    std::same_as<T, BinaryExpr> || std::same_as<T, UnaryExpr> || std::same_as<T, LiteralExpr> ||
+    std::same_as<T, IdentifierExpr> || std::same_as<T, AssignmentExpr>;
 
 template <ExprType T, typename... Args>
 ExprNodePtr createAstNode(Args... args) {
@@ -62,4 +66,10 @@ struct LiteralExpr {
 struct IdentifierExpr {
     Token m_Name;
     IdentifierExpr(Token name);
+};
+
+struct AssignmentExpr {
+    IdentifierExprPtr m_Identifier;
+    ExprNodePtr m_Value;
+    AssignmentExpr(IdentifierExprPtr identifier, ExprNodePtr value);
 };

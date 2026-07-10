@@ -13,3 +13,6 @@ LiteralExpr::LiteralExpr(LiteralValue value)
 
 IdentifierExpr::IdentifierExpr(Token name)
     : m_Name{std::move(name)} {}
+
+AssignmentExpr::AssignmentExpr(IdentifierExprPtr identifier, ExprNodePtr value)
+    : m_Identifier{std::move(identifier)}, m_Value{std::move(value)} {}
