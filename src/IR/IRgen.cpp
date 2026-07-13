@@ -2,13 +2,14 @@
 
 namespace IR {
 
-// dst = LI imm
-size_t Generator::loadIntToReg(int integer) {
-    return 0;
+VirtualRegister Generator::loadIntToReg(int integer) {}
+
+VirtualRegister Generator::getRegister() {
+    return {.ID = m_CurrRegister++, .Type = VREGTYPE::REGULAR};
 }
 
-size_t Generator::nextRegister() {
-    return m_CurrRegister++;
+VirtualRegister Generator::getRegisterFP() {
+    return {.ID = m_CurrRegisterFP++, .Type = VREGTYPE::FLOATING_POINT};
 }
 
 } // namespace IR

@@ -1,5 +1,6 @@
 #pragma once
 #include "IRnodes.hpp"
+#include "createIRnode.hpp"
 #include "lexer/Token.hpp"
 
 #include <vector>
@@ -10,24 +11,30 @@ class Generator {
 
   private:
     std::vector<IRnode> m_Nodes;
-    size_t m_CurrRegister;
+    size_t m_CurrRegister{};
+    // Floating point register count
+    size_t m_CurrRegisterFP{};
 
   public:
-    // These functions emit a quadruple, returning the destination reg
-
     // Load an integer literal into a register
-    size_t loadIntToReg(int integer);
+    VirtualRegister loadIntToReg(int integer);
 
   private:
-    // Push a quadruple onto the list, returns dst (last used register)
-    size_t emit();
+    // Wrapper for createASTnode that also pushes the node onto
+    // the Nodes vector
+    template <IRnodeType T, typename... Args>
+    void emit(Args... args) {
+        m_Nodes.emplace_back(createIRnode<T>(std::forward<Args>(args)...));
+    }
 
-    size_t nextRegister();
+    VirtualRegister getRegister();
+
+    VirtualRegister getRegisterFP();
 
     // Convert operator into its corresponding OPERATION in the TAC IR
     // different method for unary because same operator can translate to different operation
     // E.g '-' in binary is subtraction wheras is it negation in unary
-    constexpr OPERATION getOpBinary(TokenType _operator) {
+    static constexpr OPERATION getBinaryOp(TokenType _operator) {
         switch (_operator) {
         case TokenType::PLUS:
             return OPERATION::ADD;
@@ -40,16 +47,18 @@ class Generator {
 
         default:
             // unreachable
+            throw std::runtime_error("Invalid operator");
         }
     }
 
-    constexpr OPERATION getOpUnary(TokenType _operator) {
+    static constexpr OPERATION getUnaryOp(TokenType _operator) {
         switch (_operator) {
         case TokenType::MINUS:
             return OPERATION::CMPLMNT;
 
         default:
             // unreachable
+            throw std::runtime_error("Invalid operator");
         }
     }
 };
