@@ -12,15 +12,14 @@
     Where Destination can be one of:
         - Virtual Register
         - Identifier (user-defined variable)
+            - Identifiers can only be assigned a Virtual register
 
     And an Operand can be one of:
         - Virtual Register
-        - Identifier (user-defined variable)
         - Literal/Immediate/Constant (e.g like the value '4')
 
-    Note 'Destination' cannot be a literal value, therefore I've
-    called the variant for holding the result of an operation
-    'Assignable'.
+    Identifiers must be assigned a virtual register before being
+    used in operations.
 
     Each IR node represents a single TAC instruction
     An instruction can contain:
@@ -30,15 +29,15 @@
     Expression Examples:
 
     "x = a + 4" in TAC :
-        x = a + 4     | binary node
+        t0 = a         | Load var (into vreg) node
+        t1 = t0 + 4    | Binary node
+        x = t1         | store (vreg into var) node
 
     "a = 1 + 2 + (-3)" in TAC :
-        t0 = 1 + 2    | binary node
-        t1 = -3       | unary node
-        a = t0 + t1   | binary node
-
-    "x = a + 4" in TAC :
-        x = a + 4
+        t0 = 1 + 2     | binary node
+        t1 = -3        | unary node
+        t2 = t0 + t1   | binary node
+        a = t2         | store node
 
 */
 
@@ -57,6 +56,8 @@ using UnaryNodePtr = std::unique_ptr<UnaryNode>;
 
 using IRnode = std::variant<BinaryNodePtr, UnaryNodePtr>;
 
+// Virtual registers are compiler generated variables for holding the
+// result of operations.
 // RISC-V has a seperate register file for floating point operations
 // so we need to encode which register is to be used in codegen
 struct VirtualRegister {
@@ -65,29 +66,30 @@ struct VirtualRegister {
 };
 
 // operands in TAC can either be:
-// Identifier (user-defined variable), Vreg, or literal value (aka constant, immediate)
-using Operand = std::variant<std::string, VirtualRegister, int>;
+// Virtual Register, or literal value (aka constant, immediate)
+using Operand = std::variant<VirtualRegister, int>;
 
-// The result of an operation can only be assigned to an identifier or Vreg
-using Assignable = std::variant<std::string, VirtualRegister>;
+///////////////////////
+// NODE DECLARATIONS //
+///////////////////////
 
 // Dst = Src1 Op Src2
 struct BinaryNode {
-    Assignable Dst;
+    VirtualRegister Dst;
     Operand Src1;
     OPERATION Op;
     Operand Src2;
 
-    BinaryNode(Assignable dst, Operand src1, OPERATION op, Operand src2);
+    BinaryNode(VirtualRegister dst, Operand src1, OPERATION op, Operand src2);
 };
 
 // Dst = Op Src1
 struct UnaryNode {
-    Assignable Dst;
+    VirtualRegister Dst;
     Operand Src1;
     OPERATION Op;
 
-    UnaryNode(Assignable dst, OPERATION op, Operand src1);
+    UnaryNode(VirtualRegister dst, OPERATION op, Operand src1);
 };
 
 } // namespace IR
