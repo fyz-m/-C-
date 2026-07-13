@@ -2,7 +2,69 @@
 
 namespace IR {
 
-VirtualRegister Generator::loadIntToReg(int integer) {}
+Generator::Generator(std::span<const StmtNodePtr> ast)
+    : m_AST{ast}, m_ExprVisitor{*this}, m_StmtVisitor{*this} {}
+
+void Generator::generateIR() {
+    for (const auto& node : m_AST)
+        std::visit(m_StmtVisitor, node);
+}
+
+void Generator::StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
+    std::visit(Gen.m_ExprVisitor, stmt->m_Expr);
+}
+
+void Generator::StmtVisitor::operator()(const BlockStmtPtr& stmt) const {}
+
+void Generator::StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {}
+
+void Generator::StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
+
+void Generator::StmtVisitor::operator()(const FunctionStmtPtr& stmt) const {}
+
+void Generator::StmtVisitor::operator()(const VarDeclarationStmtPtr& stmt) const {}
+
+Operand Generator::ExprVisitor::operator()(const LiteralExprPtr& expr) const {
+    if (auto* p = std::get_if<int>(&expr->m_Value))
+        return *p;
+
+    return VirtualRegister{};
+}
+/* 1 + 2
+
+*/
+Operand Generator::ExprVisitor::operator()(const BinaryExprPtr& expr) const {
+
+    auto src1 = std::visit(*this, expr->m_leftNode);
+    auto src2 = std::visit(*this, expr->m_rightNode);
+    auto result = Gen.getRegister();
+
+    Gen.emit<IR::BinaryNode>(result, src1, Generator::getBinaryOp(expr->m_operation.type), src2);
+    return result;
+}
+
+Operand Generator::ExprVisitor::operator()(const UnaryExprPtr& expr) const {
+
+    auto src1 = std::visit(*this, expr->m_expression);
+    auto result = Gen.getRegister();
+
+    Gen.emit<IR::UnaryNode>(result, Generator::getUnaryOp(expr->m_operation.type), src1);
+    return result;
+}
+
+Operand Generator::ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
+    return VirtualRegister{};
+}
+
+Operand Generator::ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
+    return VirtualRegister{};
+}
+
+VirtualRegister Generator::loadIntToReg(int integer) {
+    auto reg = getRegister();
+    emit<AssignToVregNode>(reg, integer);
+    return reg;
+}
 
 VirtualRegister Generator::getRegister() {
     return {.ID = m_CurrRegister++, .Type = VREGTYPE::REGULAR};

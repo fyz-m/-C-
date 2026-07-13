@@ -2,6 +2,7 @@
 #include "IRnodes.hpp"
 #include "createIRnode.hpp"
 #include "lexer/Token.hpp"
+#include "parser/Ast/Stmt.hpp"
 
 #include <vector>
 
@@ -11,21 +12,26 @@ class Generator {
 
   private:
     std::vector<IRnode> m_Nodes;
+    std::span<const StmtNodePtr> m_AST;
+
+    // Track virtual registers
     size_t m_CurrRegister{};
-    // Floating point register count
     size_t m_CurrRegisterFP{};
 
   public:
-    // Load an integer literal into a register
-    VirtualRegister loadIntToReg(int integer);
+    Generator(std::span<const StmtNodePtr> ast);
 
-  private:
+    void generateIR();
+
     // Wrapper for createASTnode that also pushes the node onto
     // the Nodes vector
     template <IRnodeType T, typename... Args>
     void emit(Args... args) {
         m_Nodes.emplace_back(createIRnode<T>(std::forward<Args>(args)...));
     }
+
+    // Load an integer literal into a register
+    VirtualRegister loadIntToReg(int integer);
 
     VirtualRegister getRegister();
 
@@ -61,6 +67,37 @@ class Generator {
             throw std::runtime_error("Invalid operator");
         }
     }
+
+    // Visitors for AST nodes
+    // converts a given AST node into its TAC IR node
+    struct ExprVisitor {
+        Generator& Gen;
+        ExprVisitor(Generator& generator)
+            : Gen{generator} {}
+
+        Operand operator()(const LiteralExprPtr& expr) const;
+        Operand operator()(const BinaryExprPtr& expr) const;
+        Operand operator()(const UnaryExprPtr& expr) const;
+        Operand operator()(const IdentifierExprPtr& expr) const;
+        Operand operator()(const AssignmentExprPtr& expr) const;
+    };
+
+    struct StmtVisitor {
+        Generator& Gen;
+        StmtVisitor(Generator& generator)
+            : Gen{generator} {}
+
+        void operator()(const ExprStmtPtr& stmt) const;
+        void operator()(const BlockStmtPtr& stmt) const;
+        void operator()(const ReturnStmtPtr& stmt) const;
+        void operator()(const IfStmtPtr& stmt) const;
+        void operator()(const FunctionStmtPtr& stmt) const;
+        void operator()(const VarDeclarationStmtPtr& stmt) const;
+    };
+
+  private:
+    ExprVisitor m_ExprVisitor;
+    StmtVisitor m_StmtVisitor;
 };
 
 } // namespace IR
