@@ -1,17 +1,20 @@
 #pragma once
 #include "IR/IRnodes.hpp"
-#include "parser/Ast/Stmt.hpp"
 
 namespace IR {
 
 class Printer {
 
   public:
-    static std::string printIR(const std::vector<IRnode>& nodes);
+    static std::string printIR(std::span<IRnode> nodes);
+
+    std::string operator()(const IR::BinaryNodePtr& node) const;
+    std::string operator()(const IR::UnaryNodePtr& node) const;
+    std::string operator()(const IR::AssignToVregNodePtr& node) const;
 
   private:
-    std::string operator()(const IR::BinaryNodePtr& expr) const;
-    std::string operator()(const IR::UnaryNodePtr& expr) const;
-    std::string operator()(const IR::AssignToVregNodePtr& expr) const;
+    std::string printOperation(IR::OPERATION op) const;
+    std::string printOperand(const Operand& operand) const;
+    std::string printVreg(const VirtualRegister& reg) const;
 };
 } // namespace IR
