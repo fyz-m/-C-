@@ -95,12 +95,12 @@ struct UnaryNode {
     UnaryNode(Assignable result, OPERATION op, Operand src1);
 };
 
-// Result = Src1
+// VarName = Src1
 struct AssignmentNode {
-    Assignable Result;
-    std::string Src1;
+    Assignable VarName;
+    Operand Src1;
 
-    AssignmentNode(Assignable result, std::string src1);
+    AssignmentNode(Assignable name, Operand src1);
 };
 
 } // namespace IR

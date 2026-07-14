@@ -19,6 +19,7 @@ class Printer {
     std::string printOperation(IR::OPERATION op) const;
     std::string printVreg(const VirtualRegister& reg) const;
 
+    // An IR variable is <string, VirtualRegister, int>
     template <IRVAR T>
     std::string printIRvariable(T operand) const {
 

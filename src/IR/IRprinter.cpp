@@ -28,7 +28,10 @@ std::string Printer::operator()(const IR::UnaryNodePtr& node) const {
 }
 
 // Vreg = imm
-std::string Printer::operator()(const IR::AssignmentNodePtr& node) const {}
+std::string Printer::operator()(const IR::AssignmentNodePtr& node) const {
+    return std::format(
+        "{} = {}", printIRvariable(node->VarName), printIRvariable(node->Src1));
+}
 
 // Regular reg: tx
 // Floating point: tfpx

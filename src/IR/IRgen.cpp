@@ -61,7 +61,11 @@ Operand ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
 }
 
 Operand ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
-    return VirtualRegister{};
+    auto src1 = std::visit(*this, expr->m_Value);
+
+    Gen.emit<IR::AssignmentNode>(expr->m_Identifier->m_Name.lexeme,
+                                 std::move(src1));
+    return 0;
 }
 
 VirtualRegister Generator::loadIntToReg(int integer) {
