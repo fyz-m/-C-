@@ -36,25 +36,36 @@ INSTANTIATE_TEST_SUITE_P(
 
     ::testing::Values
     (
-        IRTestCase("addition", "1 + 2;", "t0 = 1 + 2\n"),
-        IRTestCase("addition_multiple_operands", "1 + 2 + 3 + 4;", 
+        IRTestCase("binary", "1 + 2;", "t0 = 1 + 2\n"),
+        IRTestCase("binary_var", "a + b;", "t0 = a + b\n"),
+        IRTestCase("binary_multiple_operands", "1 + 2 + 3 + 4;", 
                     "t0 = 1 + 2\n" 
                               "t1 = t0 + 3\n"
                               "t2 = t1 + 4\n"
                  ),
+        IRTestCase("unary", "-2;", "t0 = ~ 2\n"),
+        IRTestCase("unary_var", "-2;", "t0 = ~ 2\n"),
+
         IRTestCase("precedence", "1 * -2 / 3 + 4;", 
                     "t0 = ~ 2\n" 
                               "t1 = 1 * t0\n"
                               "t2 = t1 / 3\n"
                               "t3 = t2 + 4\n"
                  ),
-        IRTestCase("precedence_grouping", "1 * -2 / (3 + -4);", 
-                    "t0 = ~ 2\n" 
+        IRTestCase("precedence_grouping", "1 * -x / (y + -4);", 
+                    "t0 = ~ x\n" 
                               "t1 = 1 * t0\n"
                               "t2 = ~ 4\n"
-                              "t3 = 3 + t2\n"
+                              "t3 = y + t2\n"
                               "t4 = t1 / t3\n"
                  ),
+        IRTestCase("assignment", "x = 4;", "x = 4\n"),
+        IRTestCase("assignment_2", "x = 4; y = 3 * 4; x = y;", 
+                    "x = 4\n"
+                    "t0 = 3 * 4\n"
+                    "y = t0\n"
+                    "x = y\n"
+                ),
 
         // IRTestCase("addition1", "1 + 2", "t0 = 1 + 2"),
         // IRTestCase("addition2", "1 + 2", "t0 = 1 + 2"),
