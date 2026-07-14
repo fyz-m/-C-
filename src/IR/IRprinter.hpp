@@ -1,6 +1,9 @@
 #pragma once
 #include "IR/IRnodes.hpp"
 
+template <typename T>
+concept IRVAR = std::same_as<T, IR::Assignable> || std::same_as<T, IR::Operand>;
+
 namespace IR {
 
 class Printer {
@@ -10,11 +13,25 @@ class Printer {
 
     std::string operator()(const IR::BinaryNodePtr& node) const;
     std::string operator()(const IR::UnaryNodePtr& node) const;
-    std::string operator()(const IR::AssignToVregNodePtr& node) const;
+    std::string operator()(const IR::AssignmentNodePtr& node) const;
 
   private:
     std::string printOperation(IR::OPERATION op) const;
-    std::string printOperand(const Operand& operand) const;
     std::string printVreg(const VirtualRegister& reg) const;
+
+    template <IRVAR T>
+    std::string printIRvariable(T operand) const {
+
+        if (const auto* val = std::get_if<std::string>(&operand))
+            return *val;
+
+        if (const auto* reg = std::get_if<VirtualRegister>(&operand)) {
+            return printVreg(*reg);
+        }
+
+        // In TAC IR, Operand can be an integer literal but an Assignable cannot
+        if constexpr (std::same_as<T, Operand>)
+            return std::to_string(std::get<int>(operand));
+    }
 };
 } // namespace IR

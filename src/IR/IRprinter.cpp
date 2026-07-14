@@ -12,30 +12,23 @@ std::string Printer::printIR(std::span<IRnode> nodes) {
 
 // Result = Src1 Op Src2
 std::string Printer::operator()(const IR::BinaryNodePtr& node) const {
-    return std::format("{} = {} {} {}", printVreg(node->Result), printOperand(node->Src1),
-                       printOperation(node->Op), printOperand(node->Src2));
+    return std::format("{} = {} {} {}",
+                       printIRvariable(node->Result),
+                       printIRvariable(node->Src1),
+                       printOperation(node->Op),
+                       printIRvariable(node->Src2));
 }
 
 // Result = Op Src1
 std::string Printer::operator()(const IR::UnaryNodePtr& node) const {
-    return std::format("{} = {} {}", printVreg(node->Result), printOperation(node->Op),
-                       printOperand(node->Src1));
+    return std::format("{} = {} {}",
+                       printIRvariable(node->Result),
+                       printOperation(node->Op),
+                       printIRvariable(node->Src1));
 }
 
 // Vreg = imm
-std::string Printer::operator()(const IR::AssignToVregNodePtr& node) const {}
-
-std::string Printer::printOperand(const Operand& operand) const {
-
-    if (const auto* val = std::get_if<int>(&operand))
-        return std::to_string(*val);
-
-    if (const auto* reg = std::get_if<VirtualRegister>(&operand)) {
-        return printVreg(*reg);
-    }
-
-    return " ";
-}
+std::string Printer::operator()(const IR::AssignmentNodePtr& node) const {}
 
 // Regular reg: tx
 // Floating point: tfpx
