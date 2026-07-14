@@ -12,14 +12,14 @@
     Where Destination can be one of:
         - Virtual Register
         - Identifier (user-defined variable)
-            - Identifiers can only be assigned a Virtual register
+
+    (Destination variant is called Assignable)
 
     And an Operand can be one of:
         - Virtual Register
-        - Literal/Immediate/Constant (e.g like the value '4')
+        - Identifier (user-defined variable)
+        - Integer / Floating point literal
 
-    Identifiers must be assigned a virtual register before being
-    used in operations.
 
     Each IR node represents a single TAC instruction
     An instruction can contain:
@@ -29,15 +29,12 @@
     Expression Examples:
 
     "x = a + 4" in TAC :
-        t0 = a         | Load var (into vreg) node
-        t1 = t0 + 4    | Binary node
-        x = t1         | store (vreg into var) node
+        x = a + 4      | Binary node
 
     "a = 1 + 2 + (-3)" in TAC :
         t0 = 1 + 2     | binary node
         t1 = -3        | unary node
-        t2 = t0 + t1   | binary node
-        a = t2         | store node
+        a = t0 + t1    | binary node
 
 */
 
@@ -49,12 +46,14 @@ enum class VREGTYPE : std::uint8_t { REGULAR, FLOATING_POINT };
 // Forward declarations
 struct BinaryNode;
 struct UnaryNode;
+struct AssignmentNode;
 
 // Syntactic sugar
 using BinaryNodePtr = std::unique_ptr<BinaryNode>;
 using UnaryNodePtr = std::unique_ptr<UnaryNode>;
+using AssignmentNodePtr = std::unique_ptr<AssignmentNode>;
 
-using IRnode = std::variant<BinaryNodePtr, UnaryNodePtr>;
+using IRnode = std::variant<BinaryNodePtr, UnaryNodePtr, AssignmentNodePtr>;
 
 // Virtual registers are compiler generated variables for holding the
 // result of operations.
@@ -66,30 +65,42 @@ struct VirtualRegister {
 };
 
 // operands in TAC can either be:
-// Virtual Register, or literal value (aka constant, immediate)
-using Operand = std::variant<VirtualRegister, int>;
+// Virtual Register, variable or literal value (aka constant, immediate)
+using Operand = std::variant<VirtualRegister, std::string, int>;
+
+// Result of a TAC operation can only be stored in a
+// Virtual register or user-defined variable
+using Assignable = std::variant<VirtualRegister, std::string>;
 
 ///////////////////////
 // NODE DECLARATIONS //
 ///////////////////////
 
-// Dst = Src1 Op Src2
+// Result = Src1 Op Src2
 struct BinaryNode {
-    VirtualRegister Dst;
+    Assignable Result;
     Operand Src1;
     OPERATION Op;
     Operand Src2;
 
-    BinaryNode(VirtualRegister dst, Operand src1, OPERATION op, Operand src2);
+    BinaryNode(Assignable result, Operand src1, OPERATION op, Operand src2);
 };
 
-// Dst = Op Src1
+// Result = Op Src1
 struct UnaryNode {
-    VirtualRegister Dst;
-    Operand Src1;
+    Assignable Result;
     OPERATION Op;
+    Operand Src1;
 
-    UnaryNode(VirtualRegister dst, OPERATION op, Operand src1);
+    UnaryNode(Assignable result, OPERATION op, Operand src1);
+};
+
+// Result = Src1
+struct AssignmentNode {
+    Assignable Result;
+    std::string Src1;
+
+    AssignmentNode(Assignable result, std::string src1);
 };
 
 } // namespace IR
