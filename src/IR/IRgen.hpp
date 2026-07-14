@@ -21,9 +21,7 @@ class Generator {
   public:
     Generator(std::span<const StmtNodePtr> ast);
 
-    std::vector<IRnode> generateIR();
-
-    std::span<IRnode> getNodesView();
+    std::vector<IRnode>& generateIR();
 
     // Wrapper for createASTnode that also pushes the node onto
     // the Nodes vector
