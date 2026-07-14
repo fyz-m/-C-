@@ -42,6 +42,19 @@ INSTANTIATE_TEST_SUITE_P(
                               "t1 = t0 + 3\n"
                               "t2 = t1 + 4\n"
                  ),
+        IRTestCase("precedence", "1 * -2 / 3 + 4;", 
+                    "t0 = ~ 2\n" 
+                              "t1 = 1 * t0\n"
+                              "t2 = t1 / 3\n"
+                              "t3 = t2 + 4\n"
+                 ),
+        IRTestCase("precedence_grouping", "1 * -2 / (3 + -4);", 
+                    "t0 = ~ 2\n" 
+                              "t1 = 1 * t0\n"
+                              "t2 = ~ 4\n"
+                              "t3 = 3 + t2\n"
+                              "t4 = t1 / t3\n"
+                 ),
 
         // IRTestCase("addition1", "1 + 2", "t0 = 1 + 2"),
         // IRTestCase("addition2", "1 + 2", "t0 = 1 + 2"),

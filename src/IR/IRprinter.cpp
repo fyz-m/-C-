@@ -61,9 +61,9 @@ std::string Printer::printOperation(IR::OPERATION op) const {
     case SUB:
         return "-";
     case MULT:
-        return "x";
+        return "*";
     case DIV:
-        return "÷";
+        return "/";
     case CMPLMNT:
         return "~";
     }
