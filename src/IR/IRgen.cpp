@@ -24,7 +24,8 @@ void Generator::StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
 
 void Generator::StmtVisitor::operator()(const FunctionStmtPtr& stmt) const {}
 
-void Generator::StmtVisitor::operator()(const VarDeclarationStmtPtr& stmt) const {}
+void Generator::StmtVisitor::operator()(
+    const VarDeclarationStmtPtr& stmt) const {}
 
 Operand Generator::ExprVisitor::operator()(const LiteralExprPtr& expr) const {
     if (auto* p = std::get_if<int>(&expr->m_Value))
@@ -32,16 +33,17 @@ Operand Generator::ExprVisitor::operator()(const LiteralExprPtr& expr) const {
 
     return VirtualRegister{};
 }
-/* 1 + 2
 
-*/
 Operand Generator::ExprVisitor::operator()(const BinaryExprPtr& expr) const {
 
     auto src1 = std::visit(*this, expr->m_leftNode);
     auto src2 = std::visit(*this, expr->m_rightNode);
     auto result = Gen.getRegister();
 
-    Gen.emit<IR::BinaryNode>(result, src1, Generator::getBinaryOp(expr->m_operation.type), src2);
+    Gen.emit<IR::BinaryNode>(result,
+                             std::move(src1),
+                             Generator::getBinaryOp(expr->m_operation.type),
+                             std::move(src2));
     return result;
 }
 
@@ -50,15 +52,18 @@ Operand Generator::ExprVisitor::operator()(const UnaryExprPtr& expr) const {
     auto src1 = std::visit(*this, expr->m_expression);
     auto result = Gen.getRegister();
 
-    Gen.emit<IR::UnaryNode>(result, Generator::getUnaryOp(expr->m_operation.type), src1);
+    Gen.emit<IR::UnaryNode>(
+        result, Generator::getUnaryOp(expr->m_operation.type), std::move(src1));
     return result;
 }
 
-Operand Generator::ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
-    return VirtualRegister{};
+Operand
+Generator::ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
+    return expr->m_Name.lexeme;
 }
 
-Operand Generator::ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
+Operand
+Generator::ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
     return VirtualRegister{};
 }
 
@@ -68,12 +73,11 @@ VirtualRegister Generator::loadIntToReg(int integer) {
     return reg;
 }
 
-VirtualRegister Generator::getRegister() {
-    return {.ID = m_CurrRegister++, .Type = VREGTYPE::REGULAR};
-}
-
-VirtualRegister Generator::getRegisterFP() {
-    return {.ID = m_CurrRegisterFP++, .Type = VREGTYPE::FLOATING_POINT};
+VirtualRegister Generator::getRegister(VREGTYPE type) {
+    using enum VREGTYPE;
+    if (type == REGULAR)
+        return {.ID = m_CurrRegister++, .Type = REGULAR};
+    return {.ID = m_CurrRegisterFP++, .Type = FLOATING_POINT};
 }
 
 } // namespace IR

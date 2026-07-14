@@ -27,15 +27,13 @@ class Generator {
     // the Nodes vector
     template <IRnodeType T, typename... Args>
     void emit(Args... args) {
-        m_Nodes.emplace_back(createIRnode<T>(std::forward<Args>(args)...));
+        m_Nodes.push_back(createIRnode<T>(std::forward<Args>(args)...));
     }
 
     // Load an integer literal into a register
     VirtualRegister loadIntToReg(int integer);
 
-    VirtualRegister getRegister();
-
-    VirtualRegister getRegisterFP();
+    VirtualRegister getRegister(VREGTYPE type = VREGTYPE::REGULAR);
 
     // Convert operator into its corresponding OPERATION in the TAC IR
     // different method for unary because same operator can translate to different operation
@@ -69,7 +67,7 @@ class Generator {
     }
 
     // Visitors for AST nodes
-    // converts a given AST node into its TAC IR node
+    // Translates a given AST node into a 3AC IR node
     struct ExprVisitor {
         Generator& Gen;
         ExprVisitor(Generator& generator)
