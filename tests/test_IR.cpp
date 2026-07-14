@@ -67,6 +67,14 @@ INSTANTIATE_TEST_SUITE_P(
                     "x = y\n"
                 ),
 
+        IRTestCase("return", "return 7;", "ret 7\n"),
+        IRTestCase("return_var", "return a;", "ret a\n"),
+        IRTestCase("return_expr", "return  -4 * 2;", 
+                    "t0 = ~ 4\n"
+                    "t1 = t0 * 2\n"
+                    "ret t1\n"
+                ),
+
         // IRTestCase("addition1", "1 + 2", "t0 = 1 + 2"),
         // IRTestCase("addition2", "1 + 2", "t0 = 1 + 2"),
         // IRTestCase("addition3", "1 + 2", "t0 = 1 + 2"),

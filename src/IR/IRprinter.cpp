@@ -32,6 +32,10 @@ std::string Printer::operator()(const IR::AssignmentNodePtr& node) const {
     return std::format(
         "{} = {}", printIRvariable(node->VarName), printIRvariable(node->Src1));
 }
+// ret Val
+std::string Printer::operator()(const IR::ReturnNodePtr& node) const {
+    return std::format("ret {}", printIRvariable(node->ReturnVal));
+}
 
 // Regular reg: tx
 // Floating point: tfpx

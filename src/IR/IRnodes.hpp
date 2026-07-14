@@ -47,13 +47,16 @@ enum class VREGTYPE : std::uint8_t { REGULAR, FLOATING_POINT };
 struct BinaryNode;
 struct UnaryNode;
 struct AssignmentNode;
+struct ReturnNode;
 
 // Syntactic sugar
 using BinaryNodePtr = std::unique_ptr<BinaryNode>;
 using UnaryNodePtr = std::unique_ptr<UnaryNode>;
 using AssignmentNodePtr = std::unique_ptr<AssignmentNode>;
+using ReturnNodePtr = std::unique_ptr<ReturnNode>;
 
-using IRnode = std::variant<BinaryNodePtr, UnaryNodePtr, AssignmentNodePtr>;
+using IRnode =
+    std::variant<BinaryNodePtr, UnaryNodePtr, AssignmentNodePtr, ReturnNodePtr>;
 
 // Virtual registers are compiler generated variables for holding the
 // result of operations.
@@ -101,6 +104,11 @@ struct AssignmentNode {
     Operand Src1;
 
     AssignmentNode(Assignable name, Operand src1);
+};
+
+struct ReturnNode {
+    Operand ReturnVal;
+    ReturnNode(Operand returnvalue);
 };
 
 } // namespace IR

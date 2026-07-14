@@ -17,4 +17,8 @@ UnaryNode::UnaryNode(Assignable result, OPERATION op, Operand src1)
 
 AssignmentNode::AssignmentNode(Assignable name, Operand src1)
     : VarName{std::move(name)}, Src1{std::move(src1)} {}
+
+ReturnNode::ReturnNode(Operand returnvalue)
+    : ReturnVal{std::move(returnvalue)} {}
+
 } // namespace IR

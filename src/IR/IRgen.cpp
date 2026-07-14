@@ -18,7 +18,10 @@ void StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
 
 void StmtVisitor::operator()(const BlockStmtPtr& stmt) const {}
 
-void StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {
+    auto retval = std::visit(ExprVisitor{this->Gen}, stmt->m_RetValue.value());
+    Gen.emit<IR::ReturnNode>(std::move(retval));
+}
 
 void StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
 

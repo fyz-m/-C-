@@ -14,6 +14,7 @@ class Printer {
     std::string operator()(const IR::BinaryNodePtr& node) const;
     std::string operator()(const IR::UnaryNodePtr& node) const;
     std::string operator()(const IR::AssignmentNodePtr& node) const;
+    std::string operator()(const IR::ReturnNodePtr& node) const;
 
   private:
     std::string printOperation(IR::OPERATION op) const;
