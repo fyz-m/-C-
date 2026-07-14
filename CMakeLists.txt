@@ -7,13 +7,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Core library
 add_library(rvc_core
+src/diagnostics/DiagnosticsEngine.cpp
   src/lexer/lexer.cpp
   src/parser/AstPrinter.cpp
   src/parser/parser.cpp
   src/parser/Ast/Expr.cpp
   src/parser/Ast/Stmt.cpp
-  src/diagnostics/DiagnosticsEngine.cpp
+  src/IR/IRprinter.cpp
+  src/IR/IRnodes.cpp
+  src/IR/IRgen.cpp
 )
+
 target_include_directories(rvc_core PUBLIC src)
 target_compile_options(rvc_core PUBLIC -Wall -Wextra -Wpedantic -g3 -O0 -Wno-unused-parameter)
 
@@ -35,7 +39,9 @@ enable_testing()
 # Test executable 
 add_executable(unit_tests
   tests/test_parser.cpp
+  tests/test_IR.cpp
 )
+
 target_link_libraries(unit_tests PRIVATE rvc_core GTest::gtest_main)
 
 include(GoogleTest)
