@@ -5,9 +5,11 @@ namespace IR {
 Generator::Generator(std::span<const StmtNodePtr> ast)
     : m_AST{ast}, m_ExprVisitor{*this}, m_StmtVisitor{*this} {}
 
-void Generator::generateIR() {
+std::vector<IRnode> Generator::generateIR() {
     for (const auto& node : m_AST)
         std::visit(m_StmtVisitor, node);
+
+    return std::move(m_Nodes);
 }
 
 void Generator::StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
@@ -62,7 +64,7 @@ Operand Generator::ExprVisitor::operator()(const AssignmentExprPtr& expr) const 
 
 VirtualRegister Generator::loadIntToReg(int integer) {
     auto reg = getRegister();
-    emit<AssignToVregNode>(reg, integer);
+    // emit<AssignToVregNode>(reg, integer);
     return reg;
 }
 
@@ -74,4 +76,7 @@ VirtualRegister Generator::getRegisterFP() {
     return {.ID = m_CurrRegisterFP++, .Type = VREGTYPE::FLOATING_POINT};
 }
 
+std::span<IRnode> Generator::getNodesView() {
+    return std::span<IRnode>(m_Nodes);
+}
 } // namespace IR
