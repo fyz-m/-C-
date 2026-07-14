@@ -8,6 +8,35 @@
 
 namespace IR {
 
+class Generator;
+
+// Visitors for AST nodes
+// Translates a given AST node into a 3AC IR node
+struct ExprVisitor {
+    Generator& Gen;
+    ExprVisitor(Generator& generator)
+        : Gen{generator} {}
+
+    Operand operator()(const LiteralExprPtr& expr) const;
+    Operand operator()(const BinaryExprPtr& expr) const;
+    Operand operator()(const UnaryExprPtr& expr) const;
+    Operand operator()(const IdentifierExprPtr& expr) const;
+    Operand operator()(const AssignmentExprPtr& expr) const;
+};
+
+struct StmtVisitor {
+    Generator& Gen;
+    StmtVisitor(Generator& generator)
+        : Gen{generator} {}
+
+    void operator()(const ExprStmtPtr& stmt) const;
+    void operator()(const BlockStmtPtr& stmt) const;
+    void operator()(const ReturnStmtPtr& stmt) const;
+    void operator()(const IfStmtPtr& stmt) const;
+    void operator()(const FunctionStmtPtr& stmt) const;
+    void operator()(const VarDeclarationStmtPtr& stmt) const;
+};
+
 class Generator {
 
   private:
@@ -36,8 +65,9 @@ class Generator {
     VirtualRegister getRegister(VREGTYPE type = VREGTYPE::REGULAR);
 
     // Convert operator into its corresponding OPERATION in the TAC IR
-    // different method for unary because same operator can translate to different operation
-    // E.g '-' in binary is subtraction wheras is it negation in unary
+    // different method for unary because same operator can translate to
+    // different operation E.g '-' in binary is subtraction wheras is it
+    // negation in unary
     static constexpr OPERATION getBinaryOp(TokenType _operator) {
         switch (_operator) {
         case TokenType::PLUS:
@@ -65,37 +95,6 @@ class Generator {
             throw std::runtime_error("Invalid operator");
         }
     }
-
-    // Visitors for AST nodes
-    // Translates a given AST node into a 3AC IR node
-    struct ExprVisitor {
-        Generator& Gen;
-        ExprVisitor(Generator& generator)
-            : Gen{generator} {}
-
-        Operand operator()(const LiteralExprPtr& expr) const;
-        Operand operator()(const BinaryExprPtr& expr) const;
-        Operand operator()(const UnaryExprPtr& expr) const;
-        Operand operator()(const IdentifierExprPtr& expr) const;
-        Operand operator()(const AssignmentExprPtr& expr) const;
-    };
-
-    struct StmtVisitor {
-        Generator& Gen;
-        StmtVisitor(Generator& generator)
-            : Gen{generator} {}
-
-        void operator()(const ExprStmtPtr& stmt) const;
-        void operator()(const BlockStmtPtr& stmt) const;
-        void operator()(const ReturnStmtPtr& stmt) const;
-        void operator()(const IfStmtPtr& stmt) const;
-        void operator()(const FunctionStmtPtr& stmt) const;
-        void operator()(const VarDeclarationStmtPtr& stmt) const;
-    };
-
-  private:
-    ExprVisitor m_ExprVisitor;
-    StmtVisitor m_StmtVisitor;
 };
 
 } // namespace IR

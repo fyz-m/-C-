@@ -3,38 +3,37 @@
 namespace IR {
 
 Generator::Generator(std::span<const StmtNodePtr> ast)
-    : m_AST{ast}, m_ExprVisitor{*this}, m_StmtVisitor{*this} {}
+    : m_AST{ast} {}
 
 std::vector<IRnode>& Generator::generateIR() {
     for (const auto& node : m_AST)
-        std::visit(m_StmtVisitor, node);
+        std::visit(StmtVisitor{*this}, node);
 
     return m_Nodes;
 }
 
-void Generator::StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
-    std::visit(Gen.m_ExprVisitor, stmt->m_Expr);
+void StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
+    std::visit(ExprVisitor{this->Gen}, stmt->m_Expr);
 }
 
-void Generator::StmtVisitor::operator()(const BlockStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const BlockStmtPtr& stmt) const {}
 
-void Generator::StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {}
 
-void Generator::StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
 
-void Generator::StmtVisitor::operator()(const FunctionStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const FunctionStmtPtr& stmt) const {}
 
-void Generator::StmtVisitor::operator()(
-    const VarDeclarationStmtPtr& stmt) const {}
+void StmtVisitor::operator()(const VarDeclarationStmtPtr& stmt) const {}
 
-Operand Generator::ExprVisitor::operator()(const LiteralExprPtr& expr) const {
+Operand ExprVisitor::operator()(const LiteralExprPtr& expr) const {
     if (auto* p = std::get_if<int>(&expr->m_Value))
         return *p;
 
     return VirtualRegister{};
 }
 
-Operand Generator::ExprVisitor::operator()(const BinaryExprPtr& expr) const {
+Operand ExprVisitor::operator()(const BinaryExprPtr& expr) const {
 
     auto src1 = std::visit(*this, expr->m_leftNode);
     auto src2 = std::visit(*this, expr->m_rightNode);
@@ -47,7 +46,7 @@ Operand Generator::ExprVisitor::operator()(const BinaryExprPtr& expr) const {
     return result;
 }
 
-Operand Generator::ExprVisitor::operator()(const UnaryExprPtr& expr) const {
+Operand ExprVisitor::operator()(const UnaryExprPtr& expr) const {
 
     auto src1 = std::visit(*this, expr->m_expression);
     auto result = Gen.getRegister();
@@ -57,13 +56,11 @@ Operand Generator::ExprVisitor::operator()(const UnaryExprPtr& expr) const {
     return result;
 }
 
-Operand
-Generator::ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
+Operand ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
     return expr->m_Name.lexeme;
 }
 
-Operand
-Generator::ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
+Operand ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
     return VirtualRegister{};
 }
 
