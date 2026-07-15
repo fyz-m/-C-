@@ -108,7 +108,7 @@ enum class REGISTER : std::uint8_t {
     t5 = 30,
 
     x31 = 31,
-    t6 = 32
+    t6 = 31
 };
 
 struct ADD;
