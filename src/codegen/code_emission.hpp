@@ -1,4 +1,7 @@
-#include "ASM/asm.hpp"
+#include "ASM/RISC-V.hpp"
+#include "codegen/ASM/RISC-V.hpp"
+
+#include <string>
 
 namespace CODEGEN {
 
@@ -11,13 +14,26 @@ struct EmitAsm {
     EmitAsm(bool printABIregs)
         : m_PrintABIregs(printABIregs) {}
 
-    std::string operator()(const ASM::AddPtr& inst) const;
-    std::string operator()(const ASM::AddIPtr& inst) const;
-    std::string operator()(const ASM::RetPtr& inst) const;
-    std::string operator()(const ASM::MvPtr& inst) const;
+    std::string operator()(const RISCV::RtypePtr& inst) const;
+    std::string operator()(const RISCV::ItypePtr& inst) const;
+    std::string operator()(const RISCV::PseudoInstrution& inst) const;
+    std::string operator()(const RISCV::RetPtr& inst) const;
+    std::string operator()(const RISCV::MvPtr& inst) const;
+    std::string operator()(const RISCV::LIptr& inst) const;
+    std::string operator()(const RISCV::Notptr& inst) const;
+    std::string operator()(const RISCV::Negptr& inst) const;
 
   private:
-    std::string str(ASM::REGISTER reg) const;
+    [[nodiscard]] std::string
+    operandToStr(RISCV::Operand& operand) const;
+
+    [[nodiscard]] constexpr std::string
+    regToStr(RISCV::REGISTER reg) const;
+
+    [[nodiscard]] constexpr std::string
+    opToStr(RISCV::OPCODE::I_TYPE opcode) const;
+    [[nodiscard]] constexpr std::string
+    opToStr(RISCV::OPCODE::R_TYPE opcode) const;
 };
 
 class CodeEmitter {
@@ -28,7 +44,7 @@ class CodeEmitter {
     CodeEmitter(bool printABIregs = false)
         : m_EmitAsm{printABIregs} {}
 
-    std::string emitAsm(std::span<ASM::Instruction> instrucions);
+    std::string emitAsm(std::span<RISCV::Instruction> instrucions);
 };
 
 } // namespace CODEGEN

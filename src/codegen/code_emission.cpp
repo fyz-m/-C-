@@ -1,48 +1,122 @@
 #include "code_emission.hpp"
 
+#include "IR/IRprinter.hpp"
+
 #include <sstream>
 #include <string>
 #include <utility>
 
 namespace CODEGEN {
 
+template <class... Ts>
+struct Overloaded : Ts... {
+    using Ts::operator()...;
+};
+
 std::string
-CodeEmitter::emitAsm(std::span<ASM::Instruction> instrucions) {
+CodeEmitter::emitAsm(std::span<RISCV::Instruction> instrucions) {
     std::stringstream s;
     for (const auto& instruction : instrucions)
         s << std::visit(m_EmitAsm, instruction) << '\n';
     return s.str();
 }
 
-std::string EmitAsm::operator()(const ASM::AddPtr& inst) const {
-    return std::format("add {}, {}, {}",
-                       str(inst->Rd),
-                       str(inst->Rs1),
-                       str(inst->Rs2));
+std::string EmitAsm::operator()(const RISCV::RtypePtr& inst) const {
+    return std::format("{} {}, {}, {}",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rd),
+                       operandToStr(inst->Rs1),
+                       operandToStr(inst->Rs2));
 }
 
-std::string EmitAsm::operator()(const ASM::AddIPtr& inst) const {
-    return std::format("addi {}, {}, {}",
-                       str(inst->Rd),
-                       str(inst->Rs1),
+std::string EmitAsm::operator()(const RISCV::ItypePtr& inst) const {
+    return std::format("{} {}, {}, {}",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rd),
+                       operandToStr(inst->Rs1),
                        std::to_string(inst->Imm));
 }
 
-std::string EmitAsm::operator()(const ASM::RetPtr& inst) const {
-    return std::format("ret {}", str(inst->Reg));
+std::string
+EmitAsm::operator()(const RISCV::PseudoInstrution& inst) const {
+    return std::visit((*this), inst);
 }
 
-std::string EmitAsm::operator()(const ASM::MvPtr& inst) const {
-    return std::format("mv {}, {}", str(inst->Rd), str(inst->Rs1));
+std::string EmitAsm::operator()(const RISCV::RetPtr& inst) const {
+    return "ret";
 }
 
-std::string EmitAsm::str(const ASM::REGISTER reg) const {
+std::string EmitAsm::operator()(const RISCV::MvPtr& inst) const {
+    return std::format(
+        "mv {} {}", operandToStr(inst->Rd), operandToStr(inst->Rs1));
+}
+
+std::string EmitAsm::operator()(const RISCV::LIptr& inst) const {
+    return std::format("li {} {}",
+                       operandToStr(inst->Rd),
+                       std::to_string(inst->Imm));
+}
+
+std::string EmitAsm::operator()(const RISCV::Notptr& inst) const {
+    return std::format(
+        "not {} {}", operandToStr(inst->Rd), operandToStr(inst->Rs1));
+}
+
+std::string EmitAsm::operator()(const RISCV::Negptr& inst) const {
+    return std::format(
+        "neg {} {}", operandToStr(inst->Rd), operandToStr(inst->Rs1));
+}
+
+std::string EmitAsm::operandToStr(RISCV::Operand& operand) const {
+    return std::visit(
+        Overloaded{
+            [&](IR::VirtualRegister& v) {
+                return IR::Printer::printVreg(v);
+            },
+            [&](RISCV::Stack s) {
+                return std::format("sp+{}", std::to_string(s.Offset));
+            },
+            [&](std::string& s) { return s; },
+            [&](RISCV::REGISTER r) { return regToStr(r); },
+        },
+        operand);
+}
+
+constexpr std::string
+EmitAsm::opToStr(RISCV::OPCODE::I_TYPE opcode) const {
+
+    using enum RISCV::OPCODE::I_TYPE;
+
+    switch (opcode) {
+    case addi:
+        return "addi";
+    case subi:
+        return "subi";
+    case xori:
+        return "xori";
+    }
+}
+
+constexpr std::string
+EmitAsm::opToStr(RISCV::OPCODE::R_TYPE opcode) const {
+
+    using enum RISCV::OPCODE::R_TYPE;
+
+    switch (opcode) {
+    case add:
+        return "add";
+    case sub:
+        return "sub";
+    }
+}
+
+constexpr std::string
+EmitAsm::regToStr(const RISCV::REGISTER reg) const {
 
     if (!m_PrintABIregs)
         return std::format("x{}",
                            std::to_string(std::to_underlying(reg)));
-
-    using namespace ASM;
+    using namespace RISCV;
     using enum REGISTER;
 
     switch (reg) {
