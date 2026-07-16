@@ -8,11 +8,6 @@ using RISCV::OPCODE;
 using enum RISCV::OPCODE::I_TYPE;
 using enum REGISTER;
 
-template <class... Ts>
-struct Overloaded : Ts... {
-    using Ts::operator()...;
-};
-
 namespace CODEGEN {
 
 std::vector<RISCV::Instruction>&
@@ -25,30 +20,43 @@ CodeGenerator::generateRISCVassembly() {
 void CodeGenerator::IRvisitor::operator()(const BinaryNodePtr& node) {
 }
 
-void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {}
+void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
+
+    if (node->Op == OPERATION::CMPLMNT) {
+
+        // t0 = ~5 ->
+        // li t0, 5
+        // not t0, t0
+        if (auto* imm = std::get_if<int>(&node->Src1)) {
+            CG.pushInstruction<LI>(node->Result, *imm);
+            CG.pushInstruction<NOT>(node->Result, node->Result);
+            return;
+        }
+        // t0 = ~t1 ->
+        // not t0, t1
+        CG.pushInstruction<NOT>(
+            node->Result, CodeGenerator::castVariant(node->Src1));
+    }
+}
 
 void CodeGenerator::IRvisitor::operator()(const ReturnNodePtr& node) {
 
     // Place return value in a0 register
     // a0 is the return value register in RISC-V convention
-    std::visit(
-        Overloaded{
-            // Add immediate to a0 if returning a literal integer
-            [&](int) {
-                CG.pushInstruction<Itype>(
-                    addi, a0, x0, std::get<int>(node->ReturnVal));
-            },
-            // Else copy value into a0
-            [&](VirtualRegister&) {
-                CG.pushInstruction<MV>(
-                    a0, std::get<VirtualRegister>(node->ReturnVal));
-            },
-            [&](std::string&) {
-                CG.pushInstruction<MV>(
-                    a0, std::get<std::string>(node->ReturnVal));
-            },
-        },
-        node->ReturnVal);
+
+    // ret 5 ->
+    // addi a0, x0, 5
+    // ret
+    if (auto* imm = std::get_if<int>(&node->ReturnVal)) {
+        CG.pushInstruction<Itype>(addi, a0, x0, *imm);
+    }
+    // ret t0 ->
+    // mv a0, t0
+    // ret
+    else {
+        CG.pushInstruction<MV>(
+            a0, CodeGenerator::castVariant(node->ReturnVal));
+    }
 
     CG.pushInstruction<RET>();
 }
