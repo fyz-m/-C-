@@ -11,9 +11,6 @@
 
     Where Destination can be one of:
         - Virtual Register
-        - Identifier (user-defined variable)
-
-    (Destination variant is called Assignable)
 
     And an Operand can be one of:
         - Virtual Register
@@ -29,7 +26,8 @@
     Expression Examples:
 
     "x = a + 4" in TAC :
-        x = a + 4      | Binary node
+        t0 = a + 4      | Binary node
+        a = t0          | assignment node
 
     "a = 1 + 2 + (-3)" in TAC :
         t0 = 1 + 2     | binary node
@@ -47,6 +45,7 @@ enum class VREGTYPE : std::uint8_t { REGULAR, FLOATING_POINT };
 struct BinaryNode;
 struct UnaryNode;
 struct AssignmentNode;
+struct AssignToVreg;
 struct ReturnNode;
 
 // Syntactic sugar
@@ -54,9 +53,13 @@ using BinaryNodePtr = std::unique_ptr<BinaryNode>;
 using UnaryNodePtr = std::unique_ptr<UnaryNode>;
 using AssignmentNodePtr = std::unique_ptr<AssignmentNode>;
 using ReturnNodePtr = std::unique_ptr<ReturnNode>;
+using AssignToVregPtr = std::unique_ptr<AssignToVreg>;
 
-using IRnode =
-    std::variant<BinaryNodePtr, UnaryNodePtr, AssignmentNodePtr, ReturnNodePtr>;
+using IRnode = std::variant<BinaryNodePtr,
+                            UnaryNodePtr,
+                            AssignmentNodePtr,
+                            ReturnNodePtr,
+                            AssignToVregPtr>;
 
 // Virtual registers are compiler generated variables for holding the
 // result of operations.
@@ -68,12 +71,9 @@ struct VirtualRegister {
 };
 
 // operands in TAC can either be:
-// Virtual Register, variable or literal value (aka constant, immediate)
+// Virtual Register, variable or literal value (aka constant,
+// immediate)
 using Operand = std::variant<VirtualRegister, std::string, int>;
-
-// Result of a TAC operation can only be stored in a
-// Virtual register or user-defined variable
-using Assignable = std::variant<VirtualRegister, std::string>;
 
 ///////////////////////
 // NODE DECLARATIONS //
@@ -81,29 +81,37 @@ using Assignable = std::variant<VirtualRegister, std::string>;
 
 // Result = Src1 Op Src2
 struct BinaryNode {
-    Assignable Result;
+    VirtualRegister Result;
     Operand Src1;
     OPERATION Op;
     Operand Src2;
 
-    BinaryNode(Assignable result, Operand src1, OPERATION op, Operand src2);
+    BinaryNode(VirtualRegister result,
+               Operand src1,
+               OPERATION op,
+               Operand src2);
 };
 
 // Result = Op Src1
 struct UnaryNode {
-    Assignable Result;
+    VirtualRegister Result;
     OPERATION Op;
     Operand Src1;
 
-    UnaryNode(Assignable result, OPERATION op, Operand src1);
+    UnaryNode(VirtualRegister result, OPERATION op, Operand src1);
 };
 
 // VarName = Src1
 struct AssignmentNode {
-    Assignable VarName;
+    std::string VarName;
     Operand Src1;
 
-    AssignmentNode(Assignable name, Operand src1);
+    AssignmentNode(std::string name, Operand src1);
+};
+
+struct AssignToVreg {
+    VirtualRegister Result;
+    std::string VarName;
 };
 
 struct ReturnNode {

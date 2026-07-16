@@ -11,7 +11,7 @@ namespace IR {
 class Generator;
 
 // Visitors for AST nodes
-// Translates a given AST node into a 3AC IR node
+// Translates a given AST node into a 3AC IR node(s)
 struct ExprVisitor {
     Generator& Gen;
     ExprVisitor(Generator& generator)
@@ -56,18 +56,19 @@ class Generator {
     // the Nodes vector
     template <IRnodeType T, typename... Args>
     void emit(Args... args) {
-        m_Nodes.push_back(createIRnode<T>(std::forward<Args>(args)...));
+        m_Nodes.push_back(
+            createIRnode<T>(std::forward<Args>(args)...));
     }
 
     // Load an integer literal into a register
-    VirtualRegister loadIntToReg(int integer);
+    VirtualRegister loadVarToReg(int integer);
 
     VirtualRegister getRegister(VREGTYPE type = VREGTYPE::REGULAR);
 
     // Convert operator into its corresponding OPERATION in the TAC IR
-    // different method for unary because same operator can translate to
-    // different operation E.g '-' in binary is subtraction wheras is it
-    // negation in unary
+    // different method for unary because same operator can translate
+    // to different operation E.g '-' in binary is subtraction wheras
+    // is it negation in unary
     static constexpr OPERATION getBinaryOp(TokenType _operator) {
         switch (_operator) {
         case TokenType::PLUS:

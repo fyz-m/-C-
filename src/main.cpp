@@ -1,3 +1,6 @@
+#include "IR/IRgen.hpp"
+#include "IR/IRprinter.hpp"
+#include "codegen/backend_driver.hpp"
 #include "diagnostics/DiagnosticsEngine.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/AstPrinter.hpp"
@@ -48,6 +51,19 @@ void run(const std::string& filepath) {
         Diagnostics::DiagnosticsEngine::DisplayAllErrors();
         return;
     }
-
     AST::Printer::printAST(AST.value());
+    IR::Generator generator = IR::Generator{AST.value()};
+    auto& IRnodes = generator.generateIR();
+
+    std::println("                    IR GENERATED");
+    std::println("{}",
+                 "---------------------------------------------------"
+                 "----------------------------");
+    std::print("{}", IR::Printer::printIR(IRnodes));
+
+    std::println("                    ASM GENERATED");
+    std::println("{}",
+                 "---------------------------------------------------"
+                 "----------------------------");
+    std::print("{}", generateASM(IRnodes, true));
 }

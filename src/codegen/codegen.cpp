@@ -1,21 +1,20 @@
 #include "codegen.hpp"
 
-#include "ASM/CreateASMnode.hpp"
-
 using namespace RISCV;
 using namespace IR;
-using RISCV::OPCODE;
-using enum RISCV::OPCODE::I_TYPE;
-using enum REGISTER;
 
 namespace CODEGEN {
 
-std::vector<RISCV::Instruction>&
-CodeGenerator::generateRISCVassembly() {
+std::vector<Instruction>& CodeGenerator::generateRISCVassembly() {
     for (const auto& IRnode : m_IRnodes)
         std::visit(IRvisitor{*this}, IRnode);
     return m_Instructions;
 }
+
+using namespace OPCODE;
+using enum I_TYPE;
+using enum R_TYPE;
+using enum REGISTER;
 
 void CodeGenerator::IRvisitor::operator()(const BinaryNodePtr& node) {
 }
@@ -36,6 +35,7 @@ void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
         // not t0, t1
         CG.pushInstruction<NOT>(
             node->Result, CodeGenerator::castVariant(node->Src1));
+        return;
     }
 }
 

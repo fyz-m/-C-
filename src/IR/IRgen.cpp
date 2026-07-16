@@ -19,7 +19,8 @@ void StmtVisitor::operator()(const ExprStmtPtr& stmt) const {
 void StmtVisitor::operator()(const BlockStmtPtr& stmt) const {}
 
 void StmtVisitor::operator()(const ReturnStmtPtr& stmt) const {
-    auto retval = std::visit(ExprVisitor{this->Gen}, stmt->m_RetValue.value());
+    auto retval =
+        std::visit(ExprVisitor{this->Gen}, stmt->m_RetValue.value());
     Gen.emit<IR::ReturnNode>(std::move(retval));
 }
 
@@ -27,7 +28,8 @@ void StmtVisitor::operator()(const IfStmtPtr& stmt) const {}
 
 void StmtVisitor::operator()(const FunctionStmtPtr& stmt) const {}
 
-void StmtVisitor::operator()(const VarDeclarationStmtPtr& stmt) const {}
+void StmtVisitor::operator()(
+    const VarDeclarationStmtPtr& stmt) const {}
 
 Operand ExprVisitor::operator()(const LiteralExprPtr& expr) const {
     if (auto* p = std::get_if<int>(&expr->m_Value))
@@ -42,10 +44,11 @@ Operand ExprVisitor::operator()(const BinaryExprPtr& expr) const {
     auto src2 = std::visit(*this, expr->m_rightNode);
     auto result = Gen.getRegister();
 
-    Gen.emit<IR::BinaryNode>(result,
-                             std::move(src1),
-                             Generator::getBinaryOp(expr->m_operation.type),
-                             std::move(src2));
+    Gen.emit<IR::BinaryNode>(
+        result,
+        std::move(src1),
+        Generator::getBinaryOp(expr->m_operation.type),
+        std::move(src2));
     return result;
 }
 
@@ -55,26 +58,25 @@ Operand ExprVisitor::operator()(const UnaryExprPtr& expr) const {
     auto result = Gen.getRegister();
 
     Gen.emit<IR::UnaryNode>(
-        result, Generator::getUnaryOp(expr->m_operation.type), std::move(src1));
+        result,
+        Generator::getUnaryOp(expr->m_operation.type),
+        std::move(src1));
     return result;
 }
 
 Operand ExprVisitor::operator()(const IdentifierExprPtr& expr) const {
-    return expr->m_Name.lexeme;
+    auto result = Gen.getRegister();
+    Gen.emit<IR::AssignToVreg>(result, expr->m_Name.lexeme);
+    return result;
 }
 
 Operand ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
     auto src1 = std::visit(*this, expr->m_Value);
+    std::string name = expr->m_Identifier->m_Name.lexeme;
 
     Gen.emit<IR::AssignmentNode>(expr->m_Identifier->m_Name.lexeme,
                                  std::move(src1));
-    return 0;
-}
-
-VirtualRegister Generator::loadIntToReg(int integer) {
-    auto reg = getRegister();
-    // emit<AssignToVregNode>(reg, integer);
-    return reg;
+    return name;
 }
 
 VirtualRegister Generator::getRegister(VREGTYPE type) {

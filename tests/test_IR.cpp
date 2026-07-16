@@ -40,27 +40,33 @@ INSTANTIATE_TEST_SUITE_P(
         IRTestCase("binary_var", "a + b;", "t0 = a + b\n"),
         IRTestCase("binary_multiple_operands", "1 + 2 + 3 + 4;", 
                     "t0 = 1 + 2\n" 
-                              "t1 = t0 + 3\n"
-                              "t2 = t1 + 4\n"
+                    "t1 = t0 + 3\n"
+                    "t2 = t1 + 4\n"
                  ),
         IRTestCase("unary", "-2;", "t0 = ~ 2\n"),
         IRTestCase("unary_var", "-2;", "t0 = ~ 2\n"),
 
         IRTestCase("precedence", "1 * -2 / 3 + 4;", 
                     "t0 = ~ 2\n" 
-                              "t1 = 1 * t0\n"
-                              "t2 = t1 / 3\n"
-                              "t3 = t2 + 4\n"
+                    "t1 = 1 * t0\n"
+                    "t2 = t1 / 3\n"
+                    "t3 = t2 + 4\n"
                  ),
         IRTestCase("precedence_grouping", "1 * -x / (y + -4);", 
                     "t0 = ~ x\n" 
-                              "t1 = 1 * t0\n"
-                              "t2 = ~ 4\n"
-                              "t3 = y + t2\n"
-                              "t4 = t1 / t3\n"
+                    "t1 = 1 * t0\n"
+                    "t2 = ~ 4\n"
+                    "t3 = y + t2\n"
+                    "t4 = t1 / t3\n"
                  ),
         IRTestCase("assignment", "x = 4;", "x = 4\n"),
         IRTestCase("assignment_2", "x = 4; y = 3 * 4; x = y;", 
+                    "x = 4\n"
+                    "t0 = 3 * 4\n"
+                    "y = t0\n"
+                    "x = y\n"
+                ),
+        IRTestCase("chained_assignment", "a = 3; a = b = c = 3;", 
                     "x = 4\n"
                     "t0 = 3 * 4\n"
                     "y = t0\n"
@@ -75,13 +81,7 @@ INSTANTIATE_TEST_SUITE_P(
                     "ret t1\n"
                 ),
 
-        // IRTestCase("addition1", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition2", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition3", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition4", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition5", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition6", "1 + 2", "t0 = 1 + 2"),
-        // IRTestCase("addition7", "1 + 2", "t0 = 1 + 2"),
+
         IRTestCase("addition9", "1 + 2;", "t0 = 1 + 2\n")
     ),
 
