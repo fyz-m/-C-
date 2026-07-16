@@ -1,4 +1,6 @@
+#pragma once
 #include "../IR/IRnodes.hpp"
+#include "ASM/CreateASMnode.hpp"
 #include "ASM/RISC-V.hpp"
 
 #include <vector>
@@ -28,6 +30,16 @@ class CodeGenerator {
         // instructions, so reserve to minimize resizing
         // of vector.
         m_Instructions.reserve(IRnodes.size() * 2);
+    }
+
+    std::vector<RISCV::Instruction>& generateRISCVassembly();
+
+  private:
+    // Wrapper that pushes the instruction onto the vector
+    template <RISCV::RV_INSTR T, typename... Args>
+    void pushInstruction(Args... args) {
+        m_Instructions.push_back(
+            RISCV::createInstruction<T>(std::forward<Args>(args)...));
     }
 
     // IR node visitor
