@@ -20,9 +20,7 @@ instructions later.
 
 namespace RISCV {
 
-using ui12 = std::bitset<12>;
-
-using ui32 = uint32_t;
+using i32 = int32_t;
 
 // RISC-V registers, numeric and names
 enum class REGISTER : std::uint8_t {
@@ -143,7 +141,8 @@ using LIptr = std::unique_ptr<LI>;
 using Notptr = std::unique_ptr<NOT>;
 using Negptr = std::unique_ptr<NEG>;
 
-using PseudoInstrution = std::variant<RetPtr, MvPtr, Notptr, Negptr>;
+using PseudoInstrution =
+    std::variant<RetPtr, MvPtr, Notptr, Negptr, LIptr>;
 
 struct Rtype;
 struct Itype;
@@ -172,7 +171,7 @@ struct Itype {
     OPCODE::I_TYPE Op;
     Operand Rd;
     Operand Rs1;
-    ui32 Imm;
+    i32 Imm;
 };
 
 // Pseudo-instructions
@@ -182,14 +181,14 @@ struct RET {};
 
 // Move/copy register
 struct MV {
-    REGISTER Rd;
+    Operand Rd;
     Operand Rs1;
 };
 
 // Load immediate
 struct LI {
-    REGISTER Rd;
-    ui32 Imm;
+    Operand Rd;
+    i32 Imm;
 };
 
 struct NEG {
