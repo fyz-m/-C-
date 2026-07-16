@@ -7,7 +7,8 @@ namespace RISCV {
 template <typename T>
 concept RV_PSINSTR =
     std::same_as<T, RISCV::RET> || std::same_as<T, RISCV::MV> ||
-    std::same_as<T, RISCV::NOT> || std::same_as<T, RISCV::NEG>;
+    std::same_as<T, RISCV::NOT> || std::same_as<T, RISCV::NEG> ||
+    std::same_as<T, RISCV::LI>;
 
 template <typename T>
 concept RV_INSTR = std::same_as<T, RISCV::Rtype> ||
