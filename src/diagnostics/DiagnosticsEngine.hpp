@@ -31,8 +31,9 @@ class DiagnosticsEngine {
     inline static size_t m_errorCount;
 
   public:
-    static void init(std::string_view m_source);
+    // Print all errors
     static void DisplayAllErrors();
+    static void init(std::string_view m_source);
     static void addLine(size_t lineStart, size_t lineEnd);
     static void report(std::string&& errorMessage, size_t line, size_t column);
     static void report(Token& token, std::string&& errorMessage);
@@ -41,7 +42,9 @@ class DiagnosticsEngine {
     DiagnosticsEngine() = delete;
 
   private:
+    // Print a line of the source code
     static void printLn(size_t line);
+
     static void renderDiagnostic(Diagnostic& diagnostic);
 };
 
