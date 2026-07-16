@@ -1,4 +1,4 @@
-
+#pragma once
 #include "IR/IRnodes.hpp"
 
 #include <bitset>
@@ -126,7 +126,7 @@ enum class REGISTER : std::uint8_t {
 
 struct OPCODE {
     enum class R_TYPE : std::uint8_t { add, sub };
-    enum class I_TYPE : std::uint8_t { addi, subi };
+    enum class I_TYPE : std::uint8_t { addi, subi, xori };
     enum class J_TYPE : std::uint8_t { jal, jalr };
     enum class S_TYPE : std::uint8_t { beq };
 };
@@ -134,12 +134,16 @@ struct OPCODE {
 struct RET;
 struct MV;
 struct LI;
+struct NOT;
+struct NEG;
 
 using RetPtr = std::unique_ptr<RET>;
 using MvPtr = std::unique_ptr<MV>;
 using LIptr = std::unique_ptr<LI>;
+using Notptr = std::unique_ptr<NOT>;
+using Negptr = std::unique_ptr<NEG>;
 
-using PseudoInstrution = std::variant<RetPtr, MvPtr>;
+using PseudoInstrution = std::variant<RetPtr, MvPtr, Notptr, Negptr>;
 
 struct Rtype;
 struct Itype;
@@ -155,42 +159,47 @@ struct Stack {
 };
 
 using Operand =
-    std::variant<REGISTER, IR::VirtualRegister, std::string, Stack>;
+    std::variant<IR::VirtualRegister, std::string, Stack, REGISTER>;
 
 struct Rtype {
     OPCODE::R_TYPE Op;
-    REGISTER Rd;
+    Operand Rd;
     Operand Rs1;
     Operand Rs2;
 };
 
 struct Itype {
     OPCODE::I_TYPE Op;
-    REGISTER Rd;
+    Operand Rd;
     Operand Rs1;
-    ui12 Imm;
+    ui32 Imm;
 };
 
 // Pseudo-instructions
 
-struct RET {
-    REGISTER Reg = REGISTER::ra;
-};
+// return from function
+struct RET {};
 
+// Move/copy register
 struct MV {
     REGISTER Rd;
     Operand Rs1;
 };
 
+// Load immediate
 struct LI {
     REGISTER Rd;
     ui32 Imm;
 };
 
-struct Unary {
-    enum class OP : std::uint8_t { neg, not_ };
-    OP Op;
-    REGISTER Rs1;
+struct NEG {
+    Operand Rd;
+    Operand Rs1;
+};
+
+struct NOT {
+    Operand Rd;
+    Operand Rs1;
 };
 
 } // namespace RISCV
