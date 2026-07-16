@@ -27,11 +27,20 @@ std::string Printer::operator()(const IR::UnaryNodePtr& node) const {
                        printIRvariable(node->Src1));
 }
 
-// Vreg = imm
-std::string Printer::operator()(const IR::AssignmentNodePtr& node) const {
+// var = vreg
+std::string
+Printer::operator()(const IR::AssignmentNodePtr& node) const {
     return std::format(
-        "{} = {}", printIRvariable(node->VarName), printIRvariable(node->Src1));
+        "{} = {}", node->VarName, printIRvariable(node->Src1));
 }
+
+// vreg = var
+std::string
+Printer::operator()(const IR::AssignToVregPtr& node) const {
+    return std::format(
+        "{} = {}", printIRvariable(node->Result), node->VarName);
+}
+
 // ret Val
 std::string Printer::operator()(const IR::ReturnNodePtr& node) const {
     return std::format("ret {}", printIRvariable(node->ReturnVal));
@@ -40,7 +49,7 @@ std::string Printer::operator()(const IR::ReturnNodePtr& node) const {
 // Regular reg: tx
 // Floating point: tfpx
 // where x == ID of reg
-std::string Printer::printVreg(const VirtualRegister& reg) const {
+std::string Printer::printVreg(const VirtualRegister& reg) {
 
     std::string type;
 
