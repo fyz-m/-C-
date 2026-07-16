@@ -1,14 +1,15 @@
-#include "asm.hpp"
+#include "RISC-V.hpp"
 
 namespace ASM {
 
 template <typename T>
-concept RV_INSTRUCTION = std::same_as<T, ADD> || std::same_as<T, ADDI> ||
-                         std::same_as<T, RET> || std::same_as<T, MV>;
+concept RV_INSTRUCTION =
+    std::same_as<T, RISCV::Rtype> || std::same_as<T, RISCV::Itype>;
 
 template <RV_INSTRUCTION T, typename... Args>
-auto createASMnode(Args... args) {
-    return std::make_unique<T>(std::forward<Args>(args)...);
+auto createAsmInstruction(Args... args) {
+    return RISCV::Instruction{
+        std::make_unique<T>(std::forward<Args>(args)...)};
 }
 
 } // namespace ASM
