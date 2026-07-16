@@ -1,7 +1,6 @@
 #pragma once
 #include "IR/IRnodes.hpp"
 
-#include <bitset>
 #include <memory>
 
 /*
@@ -122,12 +121,12 @@ enum class REGISTER : std::uint8_t {
     t6 = 31
 };
 
-struct OPCODE {
-    enum class R_TYPE : std::uint8_t { add, sub };
-    enum class I_TYPE : std::uint8_t { addi, subi, xori };
-    enum class J_TYPE : std::uint8_t { jal, jalr };
-    enum class S_TYPE : std::uint8_t { beq };
-};
+namespace OPCODE {
+enum class R_TYPE : std::uint8_t { add, sub };
+enum class I_TYPE : std::uint8_t { addi, subi, xori };
+enum class J_TYPE : std::uint8_t { jal, jalr };
+enum class S_TYPE : std::uint8_t { beq };
+}; // namespace OPCODE
 
 struct RET;
 struct MV;
