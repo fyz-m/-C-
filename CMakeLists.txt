@@ -16,6 +16,9 @@ src/diagnostics/DiagnosticsEngine.cpp
   src/IR/IRprinter.cpp
   src/IR/IRnodes.cpp
   src/IR/IRgen.cpp
+  src/codegen/codegen.cpp
+  # src/codegen/backend_driver.cpp
+  src/codegen/code_emission.cpp
 )
 
 target_include_directories(rvc_core PUBLIC src)
