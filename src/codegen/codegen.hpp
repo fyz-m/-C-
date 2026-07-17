@@ -7,6 +7,9 @@
 
 namespace CODEGEN {
 
+// backend driver
+std::string generateASM(std::span<IR::IRnode> nodes, bool abi_regs);
+
 // Allows for lambdas in std::visit
 template <class... Ts>
 struct Overloaded : Ts... {
@@ -25,24 +28,36 @@ struct Overloaded : Ts... {
 // Coverting variables to real RISC-V registers is done by the
 // register allocator.
 
+using RV_Instructions = std::vector<RISCV::Instruction>;
 class CodeGenerator {
 
   private:
     std::span<IR::IRnode> m_IRnodes;
-    std::vector<RISCV::Instruction> m_Instructions;
+    RV_Instructions m_Instructions;
 
   public:
     CodeGenerator(std::span<IR::IRnode> IRnodes)
-        : m_IRnodes(IRnodes) {
-        // Each IR node will approximately be equivalent to 2 RISC-V
-        // instructions, so reserve to minimize resizing
-        // of vector.
-        m_Instructions.reserve(IRnodes.size() * 2);
+        : m_IRnodes(IRnodes) {}
+
+    RV_Instructions& generateRISCVassembly();
+};
+
+// IR node visitor
+// Logic to convert each IR node into assembly construct
+struct IRvisitor {
+
+    RV_Instructions Instructions;
+
+    IRvisitor(size_t approx_size) {
+        Instructions.reserve(approx_size);
     }
 
-    std::vector<RISCV::Instruction>& generateRISCVassembly();
+    void operator()(const IR::BinaryNodePtr& node);
+    void operator()(const IR::UnaryNodePtr& node);
+    void operator()(const IR::ReturnNodePtr& node);
+    void operator()(const IR::AssignmentNodePtr& node);
+    void operator()(const IR::AssignToVregPtr& node);
 
-  private:
     // Convert an IR operand into a RISC-V operand. Because a
     // RISC-V operand cannot be an integer (immediates are stored as
     // int, not in the operand variant).
@@ -82,24 +97,11 @@ class CodeGenerator {
     // Wrapper that pushes the instruction onto the vector
     template <RISCV::RV_INSTR T, typename... Args>
     void pushInstruction(Args... args) {
-        m_Instructions.push_back(
+        Instructions.push_back(
             RISCV::createInstruction<T>(std::forward<Args>(args)...));
     }
 
-    // IR node visitor
-    // Logic to convert each IR node into assembly construct
-    struct IRvisitor {
-        CodeGenerator& CG;
-
-        IRvisitor(CodeGenerator& cg)
-            : CG{cg} {}
-
-        void operator()(const IR::BinaryNodePtr& node);
-        void operator()(const IR::UnaryNodePtr& node);
-        void operator()(const IR::ReturnNodePtr& node);
-        void operator()(const IR::AssignmentNodePtr& node);
-        void operator()(const IR::AssignToVregPtr& node);
-    };
+    void loadImmediate(int imm);
 };
 
 } // namespace CODEGEN

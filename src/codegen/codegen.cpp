@@ -6,8 +6,15 @@ using namespace IR;
 namespace CODEGEN {
 
 std::vector<Instruction>& CodeGenerator::generateRISCVassembly() {
-    for (const auto& IRnode : m_IRnodes)
-        std::visit(IRvisitor{*this}, IRnode);
+    // Each IR node will approximately be equivalent to 2 RISC-V
+    // instructions, so reserve to minimize resizing
+    // of vector.
+    IRvisitor visitor = IRvisitor{m_IRnodes.size() * 2};
+
+    for (const auto& node : m_IRnodes)
+        std::visit(visitor, node);
+
+    m_Instructions = std::move(visitor.Instructions);
     return m_Instructions;
 }
 
@@ -16,10 +23,9 @@ using enum I_TYPE;
 using enum R_TYPE;
 using enum REGISTER;
 
-void CodeGenerator::IRvisitor::operator()(const BinaryNodePtr& node) {
-}
+void IRvisitor::operator()(const BinaryNodePtr& node) {}
 
-void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
+void IRvisitor::operator()(const UnaryNodePtr& node) {
 
     RISCV::Operand src1;
 
@@ -27,22 +33,24 @@ void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
     // li t0, 5
     // not t0, t0
     if (auto* imm = std::get_if<int>(&node->Src1)) {
-        CG.pushInstruction<LI>(node->Result, *imm);
+        // TODO:
+        // add a loadImmediate function to avoid pseudo instructions
+        pushInstruction<LI>(node->Result, *imm);
         src1 = node->Result;
 
     } // t0 = ~t1 ->
       // not t0, t1
     else {
-        CodeGenerator::castVariant(node->Src1);
+        castVariant(node->Src1);
     }
 
     switch (node->Op) {
 
     case OPERATION::CMPLMNT:
-        CG.pushInstruction<NOT>(node->Result, src1);
+        pushInstruction<NOT>(node->Result, src1);
         return;
     case OPERATION::NEG:
-        CG.pushInstruction<NEG>(node->Result, src1);
+        pushInstruction<NEG>(node->Result, src1);
         return;
 
     default:
@@ -51,7 +59,7 @@ void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
     }
 }
 
-void CodeGenerator::IRvisitor::operator()(const ReturnNodePtr& node) {
+void IRvisitor::operator()(const ReturnNodePtr& node) {
 
     // Place return value in a0 register
     // a0 is the return value register in RISC-V convention
@@ -60,23 +68,20 @@ void CodeGenerator::IRvisitor::operator()(const ReturnNodePtr& node) {
     // addi a0, x0, 5
     // ret
     if (auto* imm = std::get_if<int>(&node->ReturnVal)) {
-        CG.pushInstruction<Itype>(addi, a0, x0, *imm);
+        pushInstruction<Itype>(addi, a0, x0, *imm);
     }
     // ret t0 ->
     // mv a0, t0
     // ret
     else {
-        CG.pushInstruction<MV>(
-            a0, CodeGenerator::castVariant(node->ReturnVal));
+        pushInstruction<MV>(a0, castVariant(node->ReturnVal));
     }
 
-    CG.pushInstruction<RET>();
+    pushInstruction<RET>();
 }
 
-void CodeGenerator::IRvisitor::operator()(
-    const AssignmentNodePtr& node) {}
+void IRvisitor::operator()(const AssignmentNodePtr& node) {}
 
-void CodeGenerator::IRvisitor::operator()(
-    const AssignToVregPtr& node) {}
+void IRvisitor::operator()(const AssignToVregPtr& node) {}
 
 } // namespace CODEGEN
