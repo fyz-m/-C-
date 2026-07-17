@@ -1,6 +1,6 @@
 #include "IR/IRgen.hpp"
 #include "IR/IRprinter.hpp"
-#include "codegen/backend_driver.hpp"
+#include "codegen/codegen.hpp"
 #include "diagnostics/DiagnosticsEngine.hpp"
 #include "lexer/lexer.hpp"
 #include "parser/AstPrinter.hpp"
@@ -11,11 +11,11 @@
 #include <print>
 #include <sstream>
 
-void printHelp();
-
 void reportFailure(bool hasValue);
 
 void printFormattedArg(std::string_view arg, std::string_view desc);
+
+void printHelp();
 
 struct CompilerArgs {
     std::string InFilename;
@@ -26,9 +26,9 @@ struct CompilerArgs {
     bool InvalidArgs{true};
 };
 
-void run(const CompilerArgs& CompilerArgs);
-
 CompilerArgs ParseArgs(int argc, char* args[]);
+
+void run(const CompilerArgs& CompilerArgs);
 
 int main(int argc, char* argv[]) {
 
@@ -41,6 +41,50 @@ int main(int argc, char* argv[]) {
     } catch (const std::runtime_error& e) {
         std::println("{}", e.what());
         return 1;
+    }
+}
+
+void run(const CompilerArgs& CompilerArgs) {
+
+    std::ifstream file(CompilerArgs.InFilename,
+                       std::ios::binary | std::ios::in);
+    if (file.fail()) {
+        std::println("Could not open file '{}'.",
+                     CompilerArgs.InFilename);
+        return;
+    }
+
+    std::stringstream text;
+    text << file.rdbuf();
+    auto source = text.str();
+
+    using namespace Diagnostics;
+    DiagnosticsEngine::init(source);
+
+    auto tokens = Lexer(source).Tokenize();
+    reportFailure(tokens.has_value());
+
+    auto AST = Parser(tokens.value()).Parse();
+    reportFailure(AST.has_value());
+    if (CompilerArgs.PrintAst) {
+        std::println(
+            "------------------------------AST IR--------------"
+            "---------------");
+        AST::Printer::printAST(AST.value());
+    }
+    auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
+
+    if (CompilerArgs.PrintIR) {
+        std::println(
+            "------------------------------TAC IR--------------"
+            "---------------");
+        std::print("{}", IR::Printer::printIR(IRnodes));
+    }
+    if (CompilerArgs.PrintASM) {
+        std::println(
+            "------------------------------ASM IR--------------"
+            "---------------");
+        std::print("{}", CODEGEN::generateASM(IRnodes, true));
     }
 }
 
@@ -127,50 +171,6 @@ void printHelp() {
 void printFormattedArg(std::string_view arg, std::string_view desc) {
     std::string indent = "  ";
     std::println("{}{}\n{}{}{}", indent, arg, indent, indent, desc);
-}
-
-void run(const CompilerArgs& CompilerArgs) {
-
-    std::ifstream file(CompilerArgs.InFilename,
-                       std::ios::binary | std::ios::in);
-    if (file.fail()) {
-        std::println("Could not open file '{}'.",
-                     CompilerArgs.InFilename);
-        return;
-    }
-
-    std::stringstream text;
-    text << file.rdbuf();
-    auto source = text.str();
-
-    using namespace Diagnostics;
-    DiagnosticsEngine::init(source);
-
-    auto tokens = Lexer(source).Tokenize();
-    reportFailure(tokens.has_value());
-
-    auto AST = Parser(tokens.value()).Parse();
-    reportFailure(AST.has_value());
-    if (CompilerArgs.PrintAst) {
-        std::println(
-            "------------------------------AST IR--------------"
-            "---------------");
-        AST::Printer::printAST(AST.value());
-    }
-    auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
-
-    if (CompilerArgs.PrintIR) {
-        std::println(
-            "------------------------------TAC IR--------------"
-            "---------------");
-        std::print("{}", IR::Printer::printIR(IRnodes));
-    }
-    if (CompilerArgs.PrintASM) {
-        std::println(
-            "------------------------------ASM IR--------------"
-            "---------------");
-        std::print("{}", generateASM(IRnodes, true));
-    }
 }
 
 void reportFailure(bool hasValue) {
