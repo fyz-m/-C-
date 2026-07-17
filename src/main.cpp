@@ -11,20 +11,22 @@
 #include <print>
 #include <sstream>
 
-void run(const std::string& filepath);
-
 void printHelp();
+
+void reportFailure(bool hasValue);
 
 void printFormattedArg(std::string_view arg, std::string_view desc);
 
 struct CompilerArgs {
     std::string InFilename;
     std::string OutFilename = "output.asm";
-    bool InvalidArgs{true};
     bool PrintAst{false};
     bool PrintIR{false};
     bool PrintASM{false};
+    bool InvalidArgs{true};
 };
+
+void run(const CompilerArgs& CompilerArgs);
 
 CompilerArgs ParseArgs(int argc, char* args[]);
 
@@ -33,7 +35,13 @@ int main(int argc, char* argv[]) {
     auto compiler_args = ParseArgs(argc, argv);
     if (compiler_args.InvalidArgs)
         return 1;
-    run(compiler_args.InFilename);
+
+    try {
+        run(compiler_args);
+    } catch (const std::runtime_error& e) {
+        std::println("{}", e.what());
+        return 1;
+    }
 }
 
 CompilerArgs ParseArgs(int argc, char* args[]) {
@@ -112,6 +120,8 @@ void printHelp() {
                       "representation of program.\n");
 
     printFormattedArg("--ASM", "Print assembly output.\n");
+
+    printFormattedArg("--help", "Print compiler flag details.\n");
 }
 
 void printFormattedArg(std::string_view arg, std::string_view desc) {
@@ -119,11 +129,13 @@ void printFormattedArg(std::string_view arg, std::string_view desc) {
     std::println("{}{}\n{}{}{}", indent, arg, indent, indent, desc);
 }
 
-void run(const std::string& filepath) {
+void run(const CompilerArgs& CompilerArgs) {
 
-    std::ifstream file(filepath, std::ios::binary | std::ios::in);
+    std::ifstream file(CompilerArgs.InFilename,
+                       std::ios::binary | std::ios::in);
     if (file.fail()) {
-        std::println("Could not open file '{}'.", filepath);
+        std::println("Could not open file '{}'.",
+                     CompilerArgs.InFilename);
         return;
     }
 
@@ -131,37 +143,33 @@ void run(const std::string& filepath) {
     text << file.rdbuf();
     auto source = text.str();
 
-    Diagnostics::DiagnosticsEngine::init(source);
+    using namespace Diagnostics;
+    DiagnosticsEngine::init(source);
 
-    Lexer lexer(source);
-    auto tokens = lexer.Tokenize();
+    auto tokens = Lexer(source).Tokenize();
+    reportFailure(tokens.has_value());
 
-    if (!tokens.has_value()) {
-        Diagnostics::DiagnosticsEngine::DisplayAllErrors();
+    auto AST = Parser(tokens.value()).Parse();
+    reportFailure(AST.has_value());
+    if (CompilerArgs.PrintAst)
+        AST::Printer::printAST(AST.value());
+
+    auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
+
+    if (CompilerArgs.PrintIR)
+        std::print("{}", IR::Printer::printIR(IRnodes));
+
+    if (CompilerArgs.PrintASM)
+        std::print("{}", generateASM(IRnodes, true));
+}
+
+void reportFailure(bool hasValue) {
+    using namespace Diagnostics;
+    if (hasValue)
         return;
-    }
 
-    Parser parser = Parser(tokens.value());
-    auto AST = parser.Parse();
-
-    if (auto ec = Diagnostics::DiagnosticsEngine::errorCount()) {
-        std::println("\nStopping with {} error(s):\n", ec);
-        Diagnostics::DiagnosticsEngine::DisplayAllErrors();
-        return;
-    }
-    AST::Printer::printAST(AST.value());
-    IR::Generator generator = IR::Generator{AST.value()};
-    auto& IRnodes = generator.generateIR();
-
-    std::println("                    IR GENERATED");
-    std::println("{}",
-                 "---------------------------------------------------"
-                 "----------------------------");
-    std::print("{}", IR::Printer::printIR(IRnodes));
-
-    std::println("                    ASM GENERATED");
-    std::println("{}",
-                 "---------------------------------------------------"
-                 "----------------------------");
-    std::print("{}", generateASM(IRnodes, true));
+    DiagnosticsEngine::DisplayAllErrors();
+    throw std::runtime_error(
+        std::format("Compilation stopped with {} error(s).",
+                    DiagnosticsEngine::errorCount()));
 }
