@@ -17,12 +17,12 @@ src/diagnostics/DiagnosticsEngine.cpp
   src/IR/IRnodes.cpp
   src/IR/IRgen.cpp
   src/codegen/codegen.cpp
-  # src/codegen/backend_driver.cpp
+  src/codegen/backend_driver.cpp
   src/codegen/code_emission.cpp
 )
 
 target_include_directories(rvc_core PUBLIC src)
-target_compile_options(rvc_core PUBLIC -Wall -Wextra -Wpedantic -g3 -O0 -Wno-unused-parameter)
+target_compile_options(rvc_core PUBLIC -Wall -Wextra -Wpedantic -g3 -O0 -Wno-unused-parameter -Wnrvo)
 
 # Main executable (entry point)
 add_executable(main src/main.cpp)
@@ -43,6 +43,7 @@ enable_testing()
 add_executable(unit_tests
   tests/test_parser.cpp
   tests/test_IR.cpp
+  tests/test_codegen.cpp
 )
 
 target_link_libraries(unit_tests PRIVATE rvc_core GTest::gtest_main)
