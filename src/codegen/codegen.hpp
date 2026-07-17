@@ -7,6 +7,7 @@
 
 namespace CODEGEN {
 
+// Allows for lambdas in std::visit
 template <class... Ts>
 struct Overloaded : Ts... {
     using Ts::operator()...;
@@ -16,6 +17,8 @@ struct Overloaded : Ts... {
 // lower level IR that resembles RISC-V assembly. It determines the
 // the required RISC-V instructions that are equivalent to the IR
 // node.
+//
+// The CG also expands literal values (int literals)
 //
 // Pseudo instructions are expanded by a later pass
 //

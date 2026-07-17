@@ -21,20 +21,32 @@ void CodeGenerator::IRvisitor::operator()(const BinaryNodePtr& node) {
 
 void CodeGenerator::IRvisitor::operator()(const UnaryNodePtr& node) {
 
-    if (node->Op == OPERATION::CMPLMNT) {
+    RISCV::Operand src1;
 
-        // t0 = ~5 ->
-        // li t0, 5
-        // not t0, t0
-        if (auto* imm = std::get_if<int>(&node->Src1)) {
-            CG.pushInstruction<LI>(node->Result, *imm);
-            CG.pushInstruction<NOT>(node->Result, node->Result);
-            return;
-        }
-        // t0 = ~t1 ->
-        // not t0, t1
-        CG.pushInstruction<NOT>(
-            node->Result, CodeGenerator::castVariant(node->Src1));
+    // t0 = ~5 ->
+    // li t0, 5
+    // not t0, t0
+    if (auto* imm = std::get_if<int>(&node->Src1)) {
+        CG.pushInstruction<LI>(node->Result, *imm);
+        src1 = node->Result;
+
+    } // t0 = ~t1 ->
+      // not t0, t1
+    else {
+        CodeGenerator::castVariant(node->Src1);
+    }
+
+    switch (node->Op) {
+
+    case OPERATION::CMPLMNT:
+        CG.pushInstruction<NOT>(node->Result, src1);
+        return;
+    case OPERATION::NEG:
+        CG.pushInstruction<NEG>(node->Result, src1);
+        return;
+
+    default:
+        // unreachable
         return;
     }
 }
