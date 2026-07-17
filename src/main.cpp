@@ -151,16 +151,26 @@ void run(const CompilerArgs& CompilerArgs) {
 
     auto AST = Parser(tokens.value()).Parse();
     reportFailure(AST.has_value());
-    if (CompilerArgs.PrintAst)
+    if (CompilerArgs.PrintAst) {
+        std::println(
+            "------------------------------AST IR--------------"
+            "---------------");
         AST::Printer::printAST(AST.value());
-
+    }
     auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
 
-    if (CompilerArgs.PrintIR)
+    if (CompilerArgs.PrintIR) {
+        std::println(
+            "------------------------------TAC IR--------------"
+            "---------------");
         std::print("{}", IR::Printer::printIR(IRnodes));
-
-    if (CompilerArgs.PrintASM)
+    }
+    if (CompilerArgs.PrintASM) {
+        std::println(
+            "------------------------------ASM IR--------------"
+            "---------------");
         std::print("{}", generateASM(IRnodes, true));
+    }
 }
 
 void reportFailure(bool hasValue) {
