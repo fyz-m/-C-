@@ -68,6 +68,7 @@ std::string Printer::printOperation(IR::OPERATION op) const {
     case ADD:
         return "+";
     case SUB:
+    case NEG:
         return "-";
     case MULT:
         return "*";

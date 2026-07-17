@@ -1,7 +1,7 @@
 #pragma once
-
 #include <memory>
 #include <variant>
+#include <vector>
 
 /*
     Three-address-code (TAC) linear intermediate representation:
@@ -38,7 +38,14 @@
 
 namespace IR {
 
-enum class OPERATION : std::uint8_t { ADD, SUB, MULT, DIV, CMPLMNT };
+enum class OPERATION : std::uint8_t {
+    ADD,
+    SUB,
+    MULT,
+    DIV,
+    CMPLMNT,
+    NEG
+};
 enum class VREGTYPE : std::uint8_t { REGULAR, FLOATING_POINT };
 
 // Forward declarations
@@ -78,6 +85,11 @@ using Operand = std::variant<VirtualRegister, std::string, int>;
 ///////////////////////
 // NODE DECLARATIONS //
 ///////////////////////
+
+struct FunctionNode {
+    std::string Name;
+    std::vector<IRnode> Instructions;
+};
 
 // Result = Src1 Op Src2
 struct BinaryNode {

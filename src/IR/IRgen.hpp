@@ -88,9 +88,10 @@ class Generator {
 
     static constexpr OPERATION getUnaryOp(TokenType _operator) {
         switch (_operator) {
-        case TokenType::MINUS:
+        case TokenType::TILDE:
             return OPERATION::CMPLMNT;
-
+        case TokenType::MINUS:
+            return OPERATION::NEG;
         default:
             // unreachable
             throw std::runtime_error("Invalid operator");
