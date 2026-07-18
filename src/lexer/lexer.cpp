@@ -59,19 +59,24 @@ void Lexer::scanToken() {
         break;
 
     case '-':
-        addToken(match('-') ? TokenType::MINUS_MINUS : TokenType::MINUS);
+        addToken(match('-') ? TokenType::MINUS_MINUS
+                            : TokenType::MINUS);
         break;
     case '!':
-        addToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);
+        addToken(match('=') ? TokenType::BANG_EQUAL
+                            : TokenType::BANG);
         break;
     case '=':
-        addToken(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL);
+        addToken(match('=') ? TokenType::EQUAL_EQUAL
+                            : TokenType::EQUAL);
         break;
     case '<':
-        addToken(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS);
+        addToken(match('=') ? TokenType::LESS_EQUAL
+                            : TokenType::LESS);
         break;
     case '>':
-        addToken(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER);
+        addToken(match('=') ? TokenType::GREATER_EQUAL
+                            : TokenType::GREATER);
         break;
 
     case '/': {
@@ -100,7 +105,8 @@ void Lexer::scanToken() {
     default:
         if (std::isdigit(c)) {
             number();
-        } else if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
+        } else if (std::isalpha(static_cast<unsigned char>(c)) ||
+                   c == '_') {
             identifier();
         } else {
             // TODO:
@@ -108,7 +114,8 @@ void Lexer::scanToken() {
             // so we don't flood the terminal with the
             // same error
             m_hadError = true;
-            Diagnostics::DiagnosticsEngine::report("Unexpected character.", m_line, m_column_start);
+            Diagnostics::DiagnosticsEngine::report(
+                "Unexpected character.", m_line, m_column_start);
         }
         break;
     }
@@ -120,7 +127,8 @@ void Lexer::addToken(TokenType type) {
 
 void Lexer::addToken(TokenType type, LiteralValue& literal) {
 
-    m_tokens.emplace_back(type, getLexeme(), getLocation(), std::move(literal));
+    m_tokens.emplace_back(
+        type, getLexeme(), getLocation(), std::move(literal));
 }
 
 void Lexer::number() {
@@ -151,7 +159,9 @@ void Lexer::identifier() {
 
     auto type = m_KEYWORDS.find(identifier);
     if (type == m_KEYWORDS.end())
-        m_tokens.emplace_back(TokenType::IDENTIFIER, std::move(identifier), getLocation());
+        m_tokens.emplace_back(TokenType::IDENTIFIER,
+                              std::move(identifier),
+                              getLocation());
     else
         m_tokens.emplace_back(type->second, getLocation());
 }

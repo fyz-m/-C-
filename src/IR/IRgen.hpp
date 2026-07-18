@@ -99,9 +99,9 @@ struct ExprVisitor {
 
     Operand operator()(const LiteralExprPtr& expr) const;
 
-    Operand operator()(const BinaryExprPtr& expr) const;
+    Operand operator()(const BinaryExprPtr& expr);
 
-    Operand operator()(const UnaryExprPtr& expr) const;
+    Operand operator()(const UnaryExprPtr& expr);
 
     Operand operator()(const IdentifierExprPtr& expr) const;
 

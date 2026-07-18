@@ -1,11 +1,13 @@
 #pragma once
 #include <cstddef>
+#include <cstdint>
 #include <string>
 #include <variant>
 
-enum class TokenType;
+enum class TokenType : std::uint8_t;
 
-using LiteralValue = std::variant<std::monostate, int, float, std::string>;
+using LiteralValue =
+    std::variant<std::monostate, int, float, std::string>;
 
 struct Location {
     size_t line{};
@@ -23,14 +25,20 @@ struct Token {
     Token(TokenType type, std::string&& lexeme, Location location)
         : type{type}, lexeme{std::move(lexeme)}, loc{location} {}
 
-    Token(TokenType type, std::string&& lexeme, Location location, LiteralValue&& literal)
-        : type{type}, lexeme{std::move(lexeme)}, loc{location}, literal{std::move(literal)} {}
+    Token(TokenType type,
+          std::string&& lexeme,
+          Location location,
+          LiteralValue&& literal)
+        : type{type},
+          lexeme{std::move(lexeme)},
+          loc{location},
+          literal{std::move(literal)} {}
 
     Token(TokenType type, Location location)
         : type{type}, loc{location} {}
 };
 
-enum class TokenType {
+enum class TokenType : std::uint8_t {
     // Single-character tokens.
     LEFT_PAREN,
     RIGHT_PAREN,

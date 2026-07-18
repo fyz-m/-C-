@@ -38,7 +38,7 @@ Operand ExprVisitor::operator()(const LiteralExprPtr& expr) const {
     return "null";
 }
 
-Operand ExprVisitor::operator()(const BinaryExprPtr& expr) const {
+Operand ExprVisitor::operator()(const BinaryExprPtr& expr) {
 
     auto src1 = std::visit(ExprVisitor{Gen}, expr->m_leftNode);
     auto src2 = std::visit(ExprVisitor{Gen}, expr->m_rightNode);
@@ -48,7 +48,7 @@ Operand ExprVisitor::operator()(const BinaryExprPtr& expr) const {
     // being assigned to.
     Variable result;
     if ((*this).Resultname.has_value())
-        result = Resultname.value();
+        result = std::move(Resultname.value());
     // else create new variable and store result in that
     else
         result = Gen.getTempVar();
@@ -62,15 +62,14 @@ Operand ExprVisitor::operator()(const BinaryExprPtr& expr) const {
     return result;
 }
 
-Operand ExprVisitor::operator()(const UnaryExprPtr& expr) const {
+Operand ExprVisitor::operator()(const UnaryExprPtr& expr) {
 
     auto src1 = std::visit(ExprVisitor{Gen}, expr->m_expression);
 
     Variable result;
 
     if ((*this).Resultname.has_value())
-        // Need to cast the std::optional for move semantics
-        result = std::move(Resultname).value();
+        result = std::move(Resultname.value());
     else
         result = Gen.getTempVar();
 
@@ -92,15 +91,22 @@ Operand ExprVisitor::operator()(const AssignmentExprPtr& expr) const {
 
     auto src1 = std::visit(ExprVisitor{Gen, var_name}, expr->m_Value);
 
-    // If the exprNode (Value) that the AssignmentNode held did not
-    // nest deeper (i.e contained another exprNode), the result of
-    // converting that expr into 3AC (src1) would land itself to only
-    // one 3AC instruction.
-    // Meaning src1 == var_name,
+    // If result of previous instruction is stored in var_name, dont
+    // emit an assignment instruction (name = src). So we dont emit a
+    // redundant self-assignment instruction like "x = x". This also
+    // optimizes away any self assignments in the source code.
+    //
+    // Example AssignmentExpr (= a (+ 1 1)):
+    // call std::visit on BinaryExpr(+ 1 1)
+    // BinaryExpr visitor emits "a = 1 + 1", returns "a" (src1 = a)
+    // If we emit an assignment instruction, we will emit "a = a".
+    //
     auto* res = std::get_if<std::string>(&src1);
     if (res && *res == var_name)
         return var_name;
 
+    // we need to return the name str so we can properly translate
+    // chained assignment expressions
     auto var_name_cpy = var_name;
     Gen.emit<IR::AssignmentNode>(std::move(var_name),
                                  std::move(src1));

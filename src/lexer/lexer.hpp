@@ -54,7 +54,8 @@ class Lexer {
     // Add line to diagnostic engine's line tracker
     void addLineToDE() const;
 
-    // Return char at location m_current and increment m_current (consume char)
+    // Return char at location m_current and increment m_current
+    // (consume char)
     char advance();
 
     // Conditional advance/consume
@@ -65,14 +66,15 @@ class Lexer {
 
     char peekNext() const;
 
-    std::unordered_map<std::string, TokenType> m_KEYWORDS{{{"else", TokenType::ELSE},
-                                                           {"for", TokenType::FOR},
-                                                           {"if", TokenType::IF},
-                                                           {"return", TokenType::RETURN},
-                                                           {"while", TokenType::WHILE},
-                                                           {"break", TokenType::BREAK},
-                                                           {"def", TokenType::DEF},
-                                                           {"void", TokenType::VOID},
-                                                           {"int", TokenType::INT},
-                                                           {"float", TokenType::FLOAT}}};
+    std::unordered_map<std::string, TokenType> m_KEYWORDS{
+        {{"else", TokenType::ELSE},
+         {"for", TokenType::FOR},
+         {"if", TokenType::IF},
+         {"return", TokenType::RETURN},
+         {"while", TokenType::WHILE},
+         {"break", TokenType::BREAK},
+         {"def", TokenType::DEF},
+         {"void", TokenType::VOID},
+         {"int", TokenType::INT},
+         {"float", TokenType::FLOAT}}};
 };

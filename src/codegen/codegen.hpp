@@ -28,25 +28,28 @@ struct Overloaded : Ts... {
 // Coverting variables to real RISC-V registers is done by the
 // register allocator.
 
-using RV_Instructions = std::vector<RISCV::Instruction>;
+using RiscvInstructions = std::vector<RISCV::Instruction>;
 class CodeGenerator {
 
   private:
     std::span<IR::IRnode> m_IRnodes;
-    RV_Instructions m_Instructions;
+    RiscvInstructions m_Instructions;
 
   public:
     CodeGenerator(std::span<IR::IRnode> IRnodes)
         : m_IRnodes(IRnodes) {}
 
-    RV_Instructions& generateRISCVassembly();
+    void generateRISCVassembly();
+
+    [[nodiscard]]
+    RiscvInstructions& getInstructions();
 };
 
 // IR node visitor
 // Logic to convert each IR node into assembly construct
 struct IRvisitor {
 
-    RV_Instructions Instructions;
+    RiscvInstructions Instructions;
 
     IRvisitor(size_t approx_size) {
         Instructions.reserve(approx_size);
@@ -67,29 +70,23 @@ struct IRvisitor {
 
         auto op = RISCV::Operand{};
 
-        std::visit(
-            Overloaded{
-                [](int) {
-                    // Should be unreachable as
-                    // function should never be called
-                    // if operand contains <int> (enforced in
-                    // IRvisitor control flow)
-                    throw std::runtime_error(
-                        "Attempt to convert integer into "
-                        "RISC-V operand");
-                },
+        std::visit(Overloaded{
+                       [](int) {
+                           // Should be unreachable as
+                           // function should never be called
+                           // if operand contains <int> (enforced in
+                           // IRvisitor control flow)
+                           throw std::runtime_error(
+                               "Attempt to convert integer into "
+                               "RISC-V operand");
+                       },
 
-                [&](IR::VirtualRegister) {
-                    op = RISCV::Operand{
-                        std::get<IR::VirtualRegister>(operand)};
-                },
-
-                [&](std::string&) {
-                    op = RISCV::Operand{
-                        std::get<std::string>(operand)};
-                },
-            },
-            operand);
+                       [&](std::string&) {
+                           op = RISCV::Operand{
+                               std::get<std::string>(operand)};
+                       },
+                   },
+                   operand);
 
         return op;
     }

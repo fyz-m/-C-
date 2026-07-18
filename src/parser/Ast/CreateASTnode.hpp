@@ -4,8 +4,8 @@
 #include <cassert>
 #include <concepts>
 
-// Helper method to create an Expression node as a variant
-// Using template so I don't need to make a new function for every expression node
+// Helper method to create an Expr/Stmt node as a variant
+// so I don't need to make a new function for every node
 // E.g createBinaryExpr, createIdentifierExpr etc.
 
 template <typename T>
@@ -28,6 +28,6 @@ auto createAstNode(Args... args) {
 
     if constexpr (ExprNode<T>)
         return ExprNodePtr{std::move(ptr)};
-    else if constexpr (StmtNode<T>)
+    if constexpr (StmtNode<T>)
         return StmtNodePtr{std::move(ptr)};
 }

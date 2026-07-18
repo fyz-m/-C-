@@ -34,8 +34,11 @@ std::optional<StmtNodePtr> Parser::parseDeclaration() {
 
 // def identifier(args...) -> returnType {}
 StmtNodePtr Parser::parseFunctionDecl() {
-    Token& name = consume(TokenType::IDENTIFIER, "Expect identifier after function declaration.");
-    consume(TokenType::LEFT_PAREN, "Expected '(' after function identifier");
+    Token& name =
+        consume(TokenType::IDENTIFIER,
+                "Expect identifier after function declaration.");
+    consume(TokenType::LEFT_PAREN,
+            "Expected '(' after function identifier");
     // parse args
     consume(TokenType::VOID, "Expected 'void'");
     consume(TokenType::RIGHT_PAREN, "Expect ')'");
@@ -43,16 +46,21 @@ StmtNodePtr Parser::parseFunctionDecl() {
 
     auto body = std::make_unique<BlockStmt>(parseBlock());
 
-    return createAstNode<FunctionStmt>(std::move(name), std::move(body));
+    return createAstNode<FunctionStmt>(std::move(name),
+                                       std::move(body));
 }
 
 StmtNodePtr Parser::parseVariableDecl() {
-    Token& name = consume(TokenType::IDENTIFIER, "Expected identifier after variable declaration");
+    Token& name =
+        consume(TokenType::IDENTIFIER,
+                "Expected identifier after variable declaration");
     consume(TokenType::EQUAL, "Expected '=' to intialize variable");
     auto initializer = parseExpr();
-    consume(TokenType::SEMICOLON, "Expected ';' after variable initializer");
+    consume(TokenType::SEMICOLON,
+            "Expected ';' after variable initializer");
 
-    return createAstNode<VarDeclarationStmt>(std::move(name), std::move(initializer));
+    return createAstNode<VarDeclarationStmt>(std::move(name),
+                                             std::move(initializer));
 }
 
 StmtNodePtr Parser::parseStmt() {
@@ -71,7 +79,8 @@ StmtNodePtr Parser::parseReturnStmt() {
     std::optional<ExprNodePtr> expr;
     if (!check(TokenType::SEMICOLON))
         expr = parseExpr();
-    consume(TokenType::SEMICOLON, "Expected ';' after return statement");
+    consume(TokenType::SEMICOLON,
+            "Expected ';' after return statement");
 
     return createAstNode<ReturnStmt>(std::move(expr));
 }
@@ -151,7 +160,8 @@ ExprNodePtr Parser::parsePrefixExpr() {
 
     case FLOAT_LITERAL:
     case INTEGER_LITERAL:
-        return createAstNode<LiteralExpr>(std::move(advance().literal));
+        return createAstNode<LiteralExpr>(
+            std::move(advance().literal));
 
     case IDENTIFIER: {
         return createAstNode<IdentifierExpr>(std::move(advance()));
@@ -162,11 +172,12 @@ ExprNodePtr Parser::parsePrefixExpr() {
     case MINUS_MINUS:
     case MINUS: {
         auto& op = advance();
-        // Call parseExpr() with a very high binding power so it returns the next
-        // prefix expression e.g literal(2).
+        // Call parseExpr() with a very high binding power so it
+        // returns the next prefix expression e.g literal(2).
         // Equivalent to calling parsePrefixExpr() recursively
         auto expr = parseExpr(UNARY_BP);
-        return createAstNode<UnaryExpr>(std::move(op), std::move(expr));
+        return createAstNode<UnaryExpr>(std::move(op),
+                                        std::move(expr));
     }
 
     // Grouping
@@ -198,18 +209,22 @@ ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
     case MINUS:
     case PLUS: {
         auto& op = advance();
-        // Add one to the binding power so expro of a chained operator is left associative
-        // (e.g 1 + 2 + 3)
-        // In the call to parseExpr(), the call will only evaluate a leaf expr node and return that
+        // Add one to the binding power so expro of a chained operator
+        // is left associative (e.g 1 + 2 + 3) In the call to
+        // parseExpr(), the call will only evaluate a leaf expr node
+        // and return that
         auto rightExpr = parseExpr(getBindingPower(op.type) + 1);
-        return createAstNode<BinaryExpr>(std::move(leftNode), std::move(op), std::move(rightExpr));
+        return createAstNode<BinaryExpr>(
+            std::move(leftNode), std::move(op), std::move(rightExpr));
     }
     // Assignment
     case EQUAL: {
-        if (auto* identifierNode = std::get_if<IdentifierExprPtr>(&leftNode)) {
+        if (auto* identifierNode =
+                std::get_if<IdentifierExprPtr>(&leftNode)) {
             advance();
             auto rightExpr = parseExpr(getBindingPower(EQUAL));
-            return createAstNode<AssignmentExpr>(std::move(*identifierNode), std::move(rightExpr));
+            return createAstNode<AssignmentExpr>(
+                std::move(*identifierNode), std::move(rightExpr));
         }
         reportError(previous(), "Expression not assignable");
     }
@@ -220,7 +235,8 @@ ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
     case LEFT_PAREN:
     case FLOAT_LITERAL:
     case INTEGER_LITERAL:
-        reportError(peek(), "Malformed expression (missing operator)");
+        reportError(peek(),
+                    "Malformed expression (missing operator)");
 
     default:
         reportError(peek(), "Malformed infix expression");
@@ -230,11 +246,11 @@ ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
 int Parser::getBindingPower(TokenType _operator) {
     auto it = m_BindingPower.find(_operator);
 
-    // Return -1 for any token that isn't a valid operator in an expression
-    // to indicate the expression has finished.
-    // minBindingPower will always be >= 0, so returning -1 will cause the
-    // whileloop condition in parseExpr to evaluate to false, returning the
-    // expression subtree it has generated
+    // Return -1 for any token that isn't a valid operator in an
+    // expression to indicate the expression has finished.
+    // minBindingPower will always be >= 0, so returning -1 will cause
+    // the whileloop condition in parseExpr to evaluate to false,
+    // returning the expression subtree it has generated
     if (it == m_BindingPower.end())
         return -1;
     return it->second;
@@ -269,7 +285,9 @@ Token& Parser::consume(TokenType expected, const std::string& error) {
         return m_Tokens[m_Current++];
 
     std::string s =
-        check(TokenType::END_OF_FILE) ? error : error + ", found '" + peek().lexeme + "' instead";
+        check(TokenType::END_OF_FILE)
+            ? error
+            : error + ", found '" + peek().lexeme + "' instead";
 
     reportError(peek(), std::move(s));
     return peek();
@@ -297,14 +315,17 @@ bool Parser::isatEnd() {
     return peek().type == TokenType::END_OF_FILE;
 }
 
-void Parser::reportError(Token& token, std::string&& errorMessage, bool recover) {
+void Parser::reportError(Token& token,
+                         std::string&& errorMessage,
+                         bool recover) {
     auto* err_tok = &token;
     // Ignore EOF token because diag engine will attempt
     // to read past source string (UB)
     if (err_tok->type == TokenType::END_OF_FILE)
         err_tok = &previous();
 
-    Diagnostics::DiagnosticsEngine::report(*err_tok, std::move(errorMessage));
+    Diagnostics::DiagnosticsEngine::report(*err_tok,
+                                           std::move(errorMessage));
     if (recover)
         throw ParseError();
 }

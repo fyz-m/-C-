@@ -48,9 +48,9 @@ void run(const CompilerArgs& CompilerArgs) {
 
     std::ifstream file(CompilerArgs.InFilename,
                        std::ios::binary | std::ios::in);
+
     if (file.fail()) {
-        std::println("Could not open file '{}'.",
-                     CompilerArgs.InFilename);
+        std::println("Could not open file '{}'.", CompilerArgs.InFilename);
         return;
     }
 
@@ -67,23 +67,20 @@ void run(const CompilerArgs& CompilerArgs) {
     auto AST = Parser(tokens.value()).Parse();
     reportFailure(AST.has_value());
     if (CompilerArgs.PrintAst) {
-        std::println(
-            "------------------------------AST IR--------------"
-            "---------------");
+        std::println("------------------------------AST IR--------------"
+                     "---------------");
         AST::Printer::printAST(AST.value());
     }
     auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
 
     if (CompilerArgs.PrintIR) {
-        std::println(
-            "------------------------------TAC IR--------------"
-            "---------------");
+        std::println("------------------------------TAC IR--------------"
+                     "---------------");
         std::print("{}", IR::Printer::printIR(IRnodes));
     }
     if (CompilerArgs.PrintASM) {
-        std::println(
-            "------------------------------ASM IR--------------"
-            "---------------");
+        std::println("------------------------------ASM IR--------------"
+                     "---------------");
         std::print("{}", CODEGEN::generateASM(IRnodes, true));
     }
 }

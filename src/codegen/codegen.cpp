@@ -5,7 +5,7 @@ using namespace IR;
 
 namespace CODEGEN {
 
-std::vector<Instruction>& CodeGenerator::generateRISCVassembly() {
+void CodeGenerator::generateRISCVassembly() {
     // Each IR node will approximately be equivalent to 2 RISC-V
     // instructions, so reserve to minimize resizing
     // of vector.
@@ -15,6 +15,9 @@ std::vector<Instruction>& CodeGenerator::generateRISCVassembly() {
         std::visit(visitor, node);
 
     m_Instructions = std::move(visitor.Instructions);
+}
+
+RiscvInstructions& CodeGenerator::getInstructions() {
     return m_Instructions;
 }
 
@@ -50,6 +53,7 @@ void IRvisitor::operator()(const UnaryNodePtr& node) {
         pushInstruction<NOT>(node->Result, src1);
         return;
     case OPERATION::NEG:
+        // If imm < 12 bits, we can just use subi rd, x0, imm
         pushInstruction<NEG>(node->Result, src1);
         return;
 
@@ -59,6 +63,8 @@ void IRvisitor::operator()(const UnaryNodePtr& node) {
     }
 }
 
+// TODO:
+// handle no return value (return;)
 void IRvisitor::operator()(const ReturnNodePtr& node) {
 
     // Place return value in a0 register

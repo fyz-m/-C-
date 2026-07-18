@@ -27,8 +27,9 @@ TEST_P(CodeGentest, cg) {
     ).Parse().value()).generateIR());
 
     ASSERT_EQ(IR::Printer::printIR(ir), tc.expected_IR);
-
-    auto asm_nodes = std::move(CodeGenerator(ir).generateRISCVassembly());
+    auto cg = CodeGenerator(ir); 
+    cg.generateRISCVassembly();
+    auto& asm_nodes = cg.getInstructions();
 
     EXPECT_EQ(CodeEmitter(true).emitAsm(asm_nodes), tc.expected_asm);
 }
@@ -39,8 +40,9 @@ INSTANTIATE_TEST_SUITE_P(
 
     ::testing::Values
     (       
-        CodeGenTestCase{"unary_negate", "-2;", "t0 = - 2\n", "addi t0 "},
-        CodeGenTestCase{"return_imm", "return 5;", "ret 5\n", "addi a0, zero, 5\nret"}
+        CodeGenTestCase{"unary_negate", "-2;", "t.0 = - 2\n", "addi t.0 \n"},
+        CodeGenTestCase{"return_void", "return;", "ret\n", "ret\n"},
+        CodeGenTestCase{"return_imm", "return 5;", "ret 5\n", "addi a0, zero, 5\n" "ret\n"}
     ),
 
     [](const ::testing::TestParamInfo<CodeGenTestCase>& info) {

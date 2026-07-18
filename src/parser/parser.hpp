@@ -17,7 +17,7 @@ class Parser {
     size_t m_Current{0};
 
   public:
-    Parser(std::vector<Token>& tokens)
+    Parser(std::vector<Token> tokens)
         : m_Tokens{std::move(tokens)} {}
 
     Statements Parse();
@@ -73,7 +73,9 @@ class Parser {
     // Reports error to diag engine and
     // sets parser into to error recovery
     // by throwing ParseError()
-    void reportError(Token& token, std::string&& errorMessage, bool recover = true);
+    void reportError(Token& token,
+                     std::string&& errorMessage,
+                     bool recover = true);
 
     void synchronize();
 
@@ -82,8 +84,11 @@ class Parser {
     static constexpr int UNARY_BP = 100;
 
     std::unordered_map<TokenType, int> m_BindingPower{
-        {TokenType::EQUAL, 5}, {TokenType::PLUS, 10},  {TokenType::MINUS, 10},
-        {TokenType::STAR, 20}, {TokenType::SLASH, 20},
+        {TokenType::EQUAL, 5},
+        {TokenType::PLUS, 10},
+        {TokenType::MINUS, 10},
+        {TokenType::STAR, 20},
+        {TokenType::SLASH, 20},
     };
 };
 
