@@ -13,53 +13,49 @@ std::string Printer::printIR(std::span<IRnode> nodes) {
 // Result = Src1 Op Src2
 std::string Printer::operator()(const IR::BinaryNodePtr& node) const {
     return std::format("{} = {} {} {}",
-                       printIRvariable(node->Result),
-                       printIRvariable(node->Src1),
+                       printIRoperand(node->Result),
+                       printIRoperand(node->Src1),
                        printOperation(node->Op),
-                       printIRvariable(node->Src2));
+                       printIRoperand(node->Src2));
 }
 
 // Result = Op Src1
 std::string Printer::operator()(const IR::UnaryNodePtr& node) const {
     return std::format("{} = {} {}",
-                       printIRvariable(node->Result),
+                       printIRoperand(node->Result),
                        printOperation(node->Op),
-                       printIRvariable(node->Src1));
+                       printIRoperand(node->Src1));
 }
 
 // var = vreg
 std::string
 Printer::operator()(const IR::AssignmentNodePtr& node) const {
     return std::format(
-        "{} = {}", node->VarName, printIRvariable(node->Src1));
+        "{} = {}", node->VarName, printIRoperand(node->Src1));
 }
 
 // vreg = var
 std::string
 Printer::operator()(const IR::AssignToVregPtr& node) const {
     return std::format(
-        "{} = {}", printIRvariable(node->Result), node->VarName);
+        "{} = {}", printIRoperand(node->Result), node->VarName);
 }
 
 // ret Val
 std::string Printer::operator()(const IR::ReturnNodePtr& node) const {
-    return std::format("ret {}", printIRvariable(node->ReturnVal));
+    return std::format("ret {}", printIRoperand(node->ReturnVal));
 }
 
-// Regular reg: tx
-// Floating point: tfpx
-// where x == ID of reg
-std::string Printer::printVreg(const VirtualRegister& reg) {
-
-    std::string type;
-
-    if (reg.Type == IR::VREGTYPE::REGULAR)
-        type = "t";
-    else
-        type = "tfp";
-
-    return std::format("{}{}", type, reg.ID);
-}
+template <class... Ts>
+struct Overloaded : Ts... {
+    using Ts::operator()...;
+};
+std::string Printer::printIRoperand(IR::Operand operand) {
+    return std::visit(
+        Overloaded{[&](const std::string& s) { return s; },
+                   [&](int i) { return std::to_string(i); }},
+        operand);
+};
 
 std::string Printer::printOperation(IR::OPERATION op) const {
     using enum OPERATION;

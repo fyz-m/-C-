@@ -56,14 +56,17 @@ class Generator {
     // the Nodes vector
     template <IRnodeType T, typename... Args>
     void emit(Args... args) {
-        m_Nodes.push_back(
-            createIRnode<T>(std::forward<Args>(args)...));
+        m_Nodes.push_back(createIRnode<T>(std::forward<Args>(args)...));
     }
 
     // Load an integer literal into a register
-    VirtualRegister loadVarToReg(int integer);
+    Variable loadVarToReg(int integer);
 
-    VirtualRegister getRegister(VREGTYPE type = VREGTYPE::REGULAR);
+    // Create a new variable
+    // We need to make new variables so we can store the intermediate result(s)
+    // of expressions with more than 2 operands, because 3AC IR only allows a
+    // maximum of two operands
+    Variable getTempVar(bool floating_point = false);
 
     // Convert operator into its corresponding OPERATION in the TAC IR
     // different method for unary because same operator can translate

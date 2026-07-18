@@ -1,23 +1,19 @@
 #include "code_emission.hpp"
 
-#include "IR/IRprinter.hpp"
-
 #include <sstream>
 #include <string>
 #include <utility>
 
 namespace CODEGEN {
 
-template <class... Ts>
-struct Overloaded : Ts... {
-    using Ts::operator()...;
-};
+std::string CodeEmitter::emitAsm(
+    std::span<RISCV::Instruction> instrucions) const {
 
-std::string
-CodeEmitter::emitAsm(std::span<RISCV::Instruction> instrucions) {
     std::stringstream s;
+    EmitAsm visitor(m_PrintABIregs);
+
     for (const auto& instruction : instrucions)
-        s << std::visit(m_EmitAsm, instruction) << '\n';
+        s << std::visit(visitor, instruction) << '\n';
     return s.str();
 }
 
@@ -69,12 +65,14 @@ std::string EmitAsm::operator()(const RISCV::Negptr& inst) const {
                        operandToStr(inst->Rs1));
 }
 
+template <class... Ts>
+struct Overloaded : Ts... {
+    using Ts::operator()...;
+};
+
 std::string EmitAsm::operandToStr(RISCV::Operand& operand) const {
     return std::visit(
         Overloaded{
-            [&](IR::VirtualRegister& v) {
-                return IR::Printer::printVreg(v);
-            },
             [&](RISCV::Stack s) {
                 return std::format("sp+{}", std::to_string(s.Offset));
             },

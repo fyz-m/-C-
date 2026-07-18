@@ -140,8 +140,7 @@ using LIptr = std::unique_ptr<LI>;
 using Notptr = std::unique_ptr<NOT>;
 using Negptr = std::unique_ptr<NEG>;
 
-using PseudoInstrution =
-    std::variant<RetPtr, MvPtr, Notptr, Negptr, LIptr>;
+using PseudoInstrution = std::variant<RetPtr, MvPtr, Notptr, Negptr, LIptr>;
 
 struct Rtype;
 struct Itype;
@@ -149,15 +148,19 @@ struct Itype;
 using RtypePtr = std::unique_ptr<Rtype>;
 using ItypePtr = std::unique_ptr<Itype>;
 
-using Instruction =
-    std::variant<RtypePtr, ItypePtr, PseudoInstrution>;
+using Instruction = std::variant<RtypePtr, ItypePtr, PseudoInstrution>;
 
 struct Stack {
     int Offset;
 };
 
-using Operand =
-    std::variant<IR::VirtualRegister, std::string, Stack, REGISTER>;
+// std::string == User-defined or compiler generated temporary
+// Stack == variable stored on the stack
+// Register == Actual RISC-V register
+
+// We progressively lower the Operand variant through a series of passes until
+// we only have registers.
+using Operand = std::variant<std::string, Stack, REGISTER>;
 
 struct Rtype {
     OPCODE::R_TYPE Op;
@@ -173,7 +176,9 @@ struct Itype {
     i32 Imm;
 };
 
-// Pseudo-instructions
+/////////////////////////
+// Pseudo-instructions //
+/////////////////////////
 
 // return from function
 struct RET {};

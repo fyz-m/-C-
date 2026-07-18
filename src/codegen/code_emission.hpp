@@ -32,19 +32,21 @@ struct EmitAsm {
 
     [[nodiscard]] constexpr std::string
     opToStr(RISCV::OPCODE::I_TYPE opcode) const;
+
     [[nodiscard]] constexpr std::string
     opToStr(RISCV::OPCODE::R_TYPE opcode) const;
 };
 
 class CodeEmitter {
 
-    EmitAsm m_EmitAsm{false};
+    bool m_PrintABIregs;
 
   public:
     CodeEmitter(bool printABIregs = false)
-        : m_EmitAsm{printABIregs} {}
+        : m_PrintABIregs{printABIregs} {}
 
-    std::string emitAsm(std::span<RISCV::Instruction> instrucions);
+    std::string
+    emitAsm(std::span<RISCV::Instruction> instrucions) const;
 };
 
 } // namespace CODEGEN
