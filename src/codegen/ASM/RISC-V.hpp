@@ -136,11 +136,12 @@ struct NEG;
 
 using RetPtr = std::unique_ptr<RET>;
 using MvPtr = std::unique_ptr<MV>;
-using LIptr = std::unique_ptr<LI>;
-using Notptr = std::unique_ptr<NOT>;
-using Negptr = std::unique_ptr<NEG>;
+using LIPtr = std::unique_ptr<LI>;
+using NotPtr = std::unique_ptr<NOT>;
+using NegPtr = std::unique_ptr<NEG>;
 
-using PseudoInstrution = std::variant<RetPtr, MvPtr, Notptr, Negptr, LIptr>;
+using PseudoInstrution =
+    std::variant<RetPtr, MvPtr, NotPtr, NegPtr, LIPtr>;
 
 struct Rtype;
 struct Itype;
@@ -148,7 +149,8 @@ struct Itype;
 using RtypePtr = std::unique_ptr<Rtype>;
 using ItypePtr = std::unique_ptr<Itype>;
 
-using Instruction = std::variant<RtypePtr, ItypePtr, PseudoInstrution>;
+using Instruction =
+    std::variant<RtypePtr, ItypePtr, PseudoInstrution>;
 
 struct Stack {
     int Offset;
@@ -158,9 +160,9 @@ struct Stack {
 // Stack == variable stored on the stack
 // Register == Actual RISC-V register
 
-// We progressively lower the Operand variant through a series of passes until
-// we only have registers.
-using Operand = std::variant<std::string, Stack, REGISTER>;
+// We progressively lower the Operand variant through a series of
+// passes until we only have registers.
+using Operand = std::variant<IR::Variable, Stack, REGISTER>;
 
 struct Rtype {
     OPCODE::R_TYPE Op;

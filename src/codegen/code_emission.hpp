@@ -19,9 +19,9 @@ struct EmitAsm {
     std::string operator()(const RISCV::PseudoInstrution& inst) const;
     std::string operator()(const RISCV::RetPtr& inst) const;
     std::string operator()(const RISCV::MvPtr& inst) const;
-    std::string operator()(const RISCV::LIptr& inst) const;
-    std::string operator()(const RISCV::Notptr& inst) const;
-    std::string operator()(const RISCV::Negptr& inst) const;
+    std::string operator()(const RISCV::LIPtr& inst) const;
+    std::string operator()(const RISCV::NotPtr& inst) const;
+    std::string operator()(const RISCV::NegPtr& inst) const;
 
   private:
     [[nodiscard]] std::string

@@ -47,19 +47,19 @@ std::string EmitAsm::operator()(const RISCV::MvPtr& inst) const {
         "mv {}, {}", operandToStr(inst->Rd), operandToStr(inst->Rs1));
 }
 
-std::string EmitAsm::operator()(const RISCV::LIptr& inst) const {
+std::string EmitAsm::operator()(const RISCV::LIPtr& inst) const {
     return std::format("li {}, {}",
                        operandToStr(inst->Rd),
                        std::to_string(inst->Imm));
 }
 
-std::string EmitAsm::operator()(const RISCV::Notptr& inst) const {
+std::string EmitAsm::operator()(const RISCV::NotPtr& inst) const {
     return std::format("not {}, {}",
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1));
 }
 
-std::string EmitAsm::operator()(const RISCV::Negptr& inst) const {
+std::string EmitAsm::operator()(const RISCV::NegPtr& inst) const {
     return std::format("neg {}, {}",
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1));
