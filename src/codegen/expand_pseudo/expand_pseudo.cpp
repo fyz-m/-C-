@@ -26,6 +26,7 @@ void convertPseudoInstructions(RiscvInstructions& instructions) {
                             std::move(i->Rs1),
                             0);
                     },
+
                     // ret -> jalr x0, ra, 0
                     [&](const RetPtr& i) {},
 
@@ -45,7 +46,11 @@ void convertPseudoInstructions(RiscvInstructions& instructions) {
                     },
 
                     [&](const NegPtr& i) {
-
+                        instr = createInstruction<Rtype>(
+                            sub,
+                            std::move(i->Rd),
+                            zero,
+                            std::move(i->Rs1));
                     },
 
                     [&](const NotPtr& i) {
