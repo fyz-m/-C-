@@ -5,11 +5,12 @@
 #include "codegen/code_emission.hpp"
 #include "parser/parser.hpp"
 #include "IR/IRprinter.hpp"
+#include "../src/codegen/expand_pseudo/expand_pseudo.hpp"
 
-// NOLINTBEGIN
 
 using namespace CODEGEN;
 
+// NOLINTBEGIN
 struct CodeGenTestCase {
     std::string test_name;
     std::string input;
@@ -19,7 +20,7 @@ struct CodeGenTestCase {
 
 class CodeGentest : public ::testing::TestWithParam<CodeGenTestCase> {};
 
-TEST_P(CodeGentest, cg) {
+TEST_P(CodeGentest, codegenFirstPassOnly) {
     CodeGenTestCase tc = GetParam();
  
     auto ir = std::move(IR::Generator(Parser(
@@ -40,8 +41,14 @@ INSTANTIATE_TEST_SUITE_P(
 
     ::testing::Values
     (       
-        CodeGenTestCase{"unary_negate", "-2;", "t.0 = - 2\n", "addi t.0 \n"},
-        CodeGenTestCase{"return_void", "return;", "ret\n", "ret\n"},
+        CodeGenTestCase{"unary_negate_var", "-a;", "t.0 = - a\n", "neg t.0, a\n"},
+        CodeGenTestCase{"unary_negate_imm", "-2;", "t.0 = - 2\n", "li t.0, 2\n" "neg t.0, t.0\n"},
+        
+        CodeGenTestCase{"unary_nested", "-~2;", "t.0 = ~ 2\n" "t.1 = - t.0\n", 
+                                                                "li t.0, 2\n" "not t.0, t.0\n"
+                                                                "neg t.1, t.0\n"},
+
+        // CodeGenTestCase{"return_void", "return;", "ret\n", "ret\n"},
         CodeGenTestCase{"return_imm", "return 5;", "ret 5\n", "addi a0, zero, 5\n" "ret\n"}
     ),
 
@@ -49,6 +56,63 @@ INSTANTIATE_TEST_SUITE_P(
         return info.param.test_name;
     }
 );
+
+using namespace RISCV;
+using namespace OPCODE;
+using enum I_TYPE;
+using enum R_TYPE;
+using enum REGISTER;
+
+struct PItestCase {
+    std::string test_name;
+    // Store the actual function to create an instruction because 
+    // gtest copies the test case and RISCV::instruction variant 
+    // is uncopyable (contains unique ptrs)
+    std::function<RISCV::Instruction()> create_input_instruction;
+    std::function<RISCV::Instruction()> create_expected_instruction;
+};
+
+class PseudoInstrutionTest : public ::testing::TestWithParam<PItestCase> {};
+
+TEST_P(PseudoInstrutionTest, single_instruction) {
+    auto& tc = GetParam();
+    auto input = tc.create_input_instruction();
+    auto expected = tc.create_expected_instruction();
+
+    convertPseudoInstruction(input);
+
+    EmitAsm emitter{true};
+    EXPECT_EQ(std::visit(emitter, input), std::visit(emitter, expected));    
+}
+
+
+INSTANTIATE_TEST_SUITE_P(
+    expand,
+    PseudoInstrutionTest,
+
+    ::testing::Values(
+        PItestCase{"LI_imm_less_than_12_bits",
+             // li x1, 2
+             [](){ return createInstruction<LI>(REGISTER::x1, 2); },
+            // -> addi x1, zero, 2
+             [](){ return createInstruction<Itype>(addi, REGISTER::x1, REGISTER::zero, 2);}
+            },
+
+        PItestCase{"not",
+             // not x1, x2
+             [](){ return createInstruction<NOT>(x1, x2);},
+            // -> xori x1, x2, -1
+             [](){ return createInstruction<Itype>(xori, REGISTER::x1, x2, -1);}
+            }
+    ),
+
+    [](const ::testing::TestParamInfo<PItestCase>& info) {
+        return info.param.test_name;
+    }
+);
+
+
+
 
 
 // NOLINTEND
