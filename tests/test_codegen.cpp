@@ -57,11 +57,6 @@ INSTANTIATE_TEST_SUITE_P(
     }
 );
 
-using namespace RISCV;
-using namespace OPCODE;
-using enum I_TYPE;
-using enum R_TYPE;
-using enum REGISTER;
 
 struct PItestCase {
     std::string test_name;
@@ -85,24 +80,36 @@ TEST_P(PseudoInstrutionTest, single_instruction) {
     EXPECT_EQ(std::visit(emitter, input), std::visit(emitter, expected));    
 }
 
-
+using namespace RISCV;
+using namespace OPCODE;
+using enum I_TYPE;
+using enum R_TYPE;
+using enum REGISTER;
 INSTANTIATE_TEST_SUITE_P(
     expand,
     PseudoInstrutionTest,
 
     ::testing::Values(
+        
         PItestCase{"LI_imm_less_than_12_bits",
              // li x1, 2
-             [](){ return createInstruction<LI>(REGISTER::x1, 2); },
+             [](){ return createInstruction<LI>(x1, 2); },
             // -> addi x1, zero, 2
-             [](){ return createInstruction<Itype>(addi, REGISTER::x1, REGISTER::zero, 2);}
+             [](){ return createInstruction<Itype>(addi, x1, zero, 2);}
             },
 
         PItestCase{"not",
              // not x1, x2
              [](){ return createInstruction<NOT>(x1, x2);},
             // -> xori x1, x2, -1
-             [](){ return createInstruction<Itype>(xori, REGISTER::x1, x2, -1);}
+             [](){ return createInstruction<Itype>(xori, x1, x2, -1);}
+            },
+
+        PItestCase{"neg",
+             // neg x1, x2
+             [](){ return createInstruction<NEG>(x1, x2);},
+            // -> sub x1, zero, x2
+             [](){ return createInstruction<Rtype>(sub, x1, zero, x2);}
             }
     ),
 
