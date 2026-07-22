@@ -69,11 +69,32 @@ INSTANTIATE_TEST_SUITE_P(
                     "y = 3 * 4\n"
                     "x = y\n"
                 ),
-        IRTestCase("chained_assignment", "a = 3; a = b = c = 3;", 
+        // IRTestCase("assignment_aa", "x = 4; y = 3 * 4; x = y;", 
+        //             "x = 4\n"
+        //             "y = 3 * 4\n"
+        //             "x = y\n"
+        //         ), 
+        IRTestCase("assignment_chained",
+                       "a = 3;"
+                    "a = b = c = 3;",
+
                     "a = 3\n"
                     "c = 3\n"
                     "b = c\n"
                     "a = b\n"
+                ),
+        IRTestCase("assignment_complex",
+                       "c = 1 + 2 * (19 - 4) / 5;"
+                    "a = c = c + 3;"
+                    ,
+
+                    "t.0 = 19 - 4\n"
+                    "t.1 = 2 * t.0\n"
+                    "t.2 = t.1 / 5\n"
+                    "c = 1 + t.2\n"
+
+                    "c = c + 3\n"
+                    "a = c\n"
                 ),
 
         IRTestCase("return", "return 7;", "ret 7\n"),
