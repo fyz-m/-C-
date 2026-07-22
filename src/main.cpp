@@ -18,11 +18,19 @@ void printFormattedArg(std::string_view arg, std::string_view desc);
 void printHelp();
 
 struct CompilerArgs {
+
     std::string InFilename;
     std::string OutFilename = "output.asm";
-    bool PrintAst{false};
-    bool PrintIR{false};
-    bool PrintASM{false};
+
+    struct Debug {
+        bool PrintAst{false};
+        bool PrintIR{false};
+        bool PrintASM{false};
+        bool PrintABIregs{true};
+        bool PrintPseudoInstructions{true};
+    };
+    Debug Debug{};
+
     bool InvalidArgs{true};
 };
 
@@ -50,7 +58,8 @@ void run(const CompilerArgs& CompilerArgs) {
                        std::ios::binary | std::ios::in);
 
     if (file.fail()) {
-        std::println("Could not open file '{}'.", CompilerArgs.InFilename);
+        std::println("Could not open file '{}'.",
+                     CompilerArgs.InFilename);
         return;
     }
 
@@ -66,22 +75,29 @@ void run(const CompilerArgs& CompilerArgs) {
 
     auto AST = Parser(tokens.value()).Parse();
     reportFailure(AST.has_value());
-    if (CompilerArgs.PrintAst) {
-        std::println("------------------------------AST IR--------------"
-                     "---------------");
+    if (CompilerArgs.Debug.PrintAst) {
+        std::println(
+            "------------------------------AST IR--------------"
+            "---------------");
         AST::Printer::printAST(AST.value());
     }
     auto IRnodes = std::move(IR::Generator{AST.value()}.generateIR());
 
-    if (CompilerArgs.PrintIR) {
-        std::println("------------------------------TAC IR--------------"
-                     "---------------");
+    if (CompilerArgs.Debug.PrintIR) {
+        std::println(
+            "------------------------------TAC IR--------------"
+            "---------------");
         std::print("{}", IR::Printer::printIR(IRnodes));
     }
-    if (CompilerArgs.PrintASM) {
-        std::println("------------------------------ASM IR--------------"
-                     "---------------");
-        std::print("{}", CODEGEN::generateASM(IRnodes, true));
+    if (CompilerArgs.Debug.PrintASM) {
+        std::println(
+            "------------------------------ASM IR--------------"
+            "---------------");
+        std::print("{}",
+                   CODEGEN::generateASM(
+                       IRnodes,
+                       CompilerArgs.Debug.PrintABIregs,
+                       !CompilerArgs.Debug.PrintPseudoInstructions));
     }
 }
 
@@ -97,20 +113,31 @@ CompilerArgs ParseArgs(int argc, char* args[]) {
     }
 
     static bool recieved_input_file{false};
+    static bool printed_help{false};
     for (int i{1}; i < argc; ++i) {
 
         if (std::strcmp(args[i], "--AST") == 0) {
-            cargs.PrintAst = true;
+            cargs.Debug.PrintAst = true;
             continue;
         }
 
         if (std::strcmp(args[i], "--IR") == 0) {
-            cargs.PrintIR = true;
+            cargs.Debug.PrintIR = true;
             continue;
         }
 
         if (std::strcmp(args[i], "--ASM") == 0) {
-            cargs.PrintASM = true;
+            cargs.Debug.PrintASM = true;
+            continue;
+        }
+
+        if (std::strcmp(args[i], "--no_abi") == 0) {
+            cargs.Debug.PrintABIregs = false;
+            continue;
+        }
+
+        if (std::strcmp(args[i], "--no_pseudo") == 0) {
+            cargs.Debug.PrintPseudoInstructions = false;
             continue;
         }
 
@@ -125,10 +152,9 @@ CompilerArgs ParseArgs(int argc, char* args[]) {
         }
 
         if (std::strcmp(args[i], "--help") == 0) {
-            static bool alr_printed{false};
-            if (!alr_printed)
+            if (!printed_help)
                 printHelp();
-            alr_printed = true;
+            printed_help = true;
             continue;
         }
 
@@ -139,7 +165,7 @@ CompilerArgs ParseArgs(int argc, char* args[]) {
         }
     }
 
-    if (!recieved_input_file)
+    if (!recieved_input_file && !printed_help)
         std::println("No file given for compilation.");
     return cargs;
 }
@@ -158,9 +184,17 @@ void printHelp() {
 
     printFormattedArg("--IR",
                       "Print three-address-code Intermediate"
-                      "representation of program.\n");
+                      " representation of program.\n");
 
     printFormattedArg("--ASM", "Print assembly output.\n");
+
+    printFormattedArg("--no_abi",
+                      "Print assembly output with numbered registers "
+                      "instead of ABI names.\n");
+
+    printFormattedArg(
+        "--no_pseudo",
+        "Print assembly output without pseudo-instructions\n");
 
     printFormattedArg("--help", "Print compiler flag details.\n");
 }
