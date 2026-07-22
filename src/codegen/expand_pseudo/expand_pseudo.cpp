@@ -27,7 +27,10 @@ void convertPseudoInstruction(Instruction& instruction) {
                 },
 
                 // ret -> jalr x0, ra, 0
-                [&](const RetPtr& i) {},
+                [&](const RetPtr&) {
+                    instruction =
+                        createInstruction<Itype>(jalr, x0, ra, 0);
+                },
 
                 // I-type instructions in RISC-V can only encode a
                 // 12-bit immediate
