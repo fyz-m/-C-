@@ -76,7 +76,7 @@ TEST_P(PseudoInstrutionTest, single_instruction) {
 
     convertPseudoInstruction(input);
 
-    EmitAsm emitter{true};
+    EmitAsm emitter{false};
     EXPECT_EQ(std::visit(emitter, input), std::visit(emitter, expected));    
 }
 
@@ -95,21 +95,35 @@ INSTANTIATE_TEST_SUITE_P(
              // li x1, 2
              [](){ return createInstruction<LI>(x1, 2); },
             // -> addi x1, zero, 2
-             [](){ return createInstruction<Itype>(addi, x1, zero, 2);}
+             [](){ return createInstruction<Itype>(addi, x1, zero, 2); }
+            },
+
+        PItestCase{"ret",
+             // ret 
+             [](){ return createInstruction<RET>(); },
+            // -> jalr x0, ra, 0
+             [](){ return createInstruction<Itype>(jalr, x0, ra, 0); }
+            },
+
+        PItestCase{"mv",
+             // mv x1, x2
+             [](){ return createInstruction<MV>(x1, x2); },
+            // -> addi x1, x2, 0
+             [](){ return createInstruction<Itype>(addi, x1, x2, 0); }
             },
 
         PItestCase{"not",
              // not x1, x2
-             [](){ return createInstruction<NOT>(x1, x2);},
+             [](){ return createInstruction<NOT>(x1, x2); },
             // -> xori x1, x2, -1
-             [](){ return createInstruction<Itype>(xori, x1, x2, -1);}
+             [](){ return createInstruction<Itype>(xori, x1, x2, -1); }
             },
 
         PItestCase{"neg",
              // neg x1, x2
-             [](){ return createInstruction<NEG>(x1, x2);},
+             [](){ return createInstruction<NEG>(x1, x2); },
             // -> sub x1, zero, x2
-             [](){ return createInstruction<Rtype>(sub, x1, zero, x2);}
+             [](){ return createInstruction<Rtype>(sub, x1, zero, x2); }
             }
     ),
 
