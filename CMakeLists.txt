@@ -7,7 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Core library
 add_library(rvc_core
-src/diagnostics/DiagnosticsEngine.cpp
+  src/driver.cpp
+  src/diagnostics/DiagnosticsEngine.cpp
   src/lexer/lexer.cpp
   src/parser/AstPrinter.cpp
   src/parser/parser.cpp
@@ -18,6 +19,7 @@ src/diagnostics/DiagnosticsEngine.cpp
   src/IR/IRgen.cpp
   src/codegen/codegen.cpp
   src/codegen/backend_driver.cpp
+  src/codegen/reg_alloc/register_allocator.cpp
   src/codegen/code_emission.cpp
   src/codegen/expand_pseudo/expand_pseudo.cpp
   )
