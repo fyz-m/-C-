@@ -123,9 +123,11 @@ enum class REGISTER : std::uint8_t {
 
 namespace OPCODE {
 enum class R_TYPE : std::uint8_t { add, sub };
-enum class I_TYPE : std::uint8_t { addi, subi, xori, jalr };
+enum class I_TYPE : std::uint8_t { addi, subi, xori, jalr, lw };
+enum class S_TYPE : std::uint8_t { sb, sw, sh };
+enum class B_TYPE : std::uint8_t { beq };
+enum class U_TYPE : std::uint8_t { lui, auipc };
 enum class J_TYPE : std::uint8_t { jal };
-enum class S_TYPE : std::uint8_t { beq };
 }; // namespace OPCODE
 
 /////////////////////////
@@ -190,15 +192,30 @@ struct NOT {
 
 struct Rtype;
 struct Itype;
+struct Stype;
+struct Btype;
+struct Utype;
+struct Jtype;
 struct InstructionList;
 
 using RtypePtr = std::unique_ptr<Rtype>;
 using ItypePtr = std::unique_ptr<Itype>;
+using StypePtr = std::unique_ptr<Stype>;
+using BtypePtr = std::unique_ptr<Btype>;
+using UtypePtr = std::unique_ptr<Utype>;
+using JtypePtr = std::unique_ptr<Jtype>;
 using InstructionListPtr = std::unique_ptr<InstructionList>;
 
-using Instruction = std::
-    variant<RtypePtr, ItypePtr, InstructionListPtr, PseudoInstrution>;
+using Instruction = std::variant<RtypePtr,
+                                 ItypePtr,
+                                 StypePtr,
+                                 BtypePtr,
+                                 UtypePtr,
+                                 JtypePtr,
+                                 InstructionListPtr,
+                                 PseudoInstrution>;
 
+// op rd, rs1, rs1
 struct Rtype {
     OPCODE::R_TYPE Op;
     Operand Rd;
@@ -206,11 +223,41 @@ struct Rtype {
     Operand Rs2;
 };
 
+// op rd, rs1, imm
+// lw, lb, lh:
+// op rd, imm(rs1)
 struct Itype {
     OPCODE::I_TYPE Op;
     Operand Rd;
     Operand Rs1;
     i32 Imm;
+};
+
+// op rd, imm(rs1)
+struct Stype {
+    OPCODE::S_TYPE Op;
+    Operand Rs1;
+    i32 Imm;
+    Operand Rs2;
+};
+
+struct Btype {
+    OPCODE::B_TYPE Op;
+    Operand Rs1;
+    Operand Rs2;
+    std::string Label;
+};
+
+struct Utype {
+    OPCODE::U_TYPE Op;
+    Operand Rd;
+    i32 Imm;
+};
+
+struct Jtype {
+    OPCODE::J_TYPE Op;
+    Operand Rd;
+    std::string Label;
 };
 
 // Later passes in the compiler like register allocation and

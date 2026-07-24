@@ -11,8 +11,11 @@ concept RV_PSINSTR =
     std::same_as<T, RISCV::LI>;
 
 template <typename T>
-concept RV_INSTR = std::same_as<T, RISCV::Rtype> ||
-                   std::same_as<T, RISCV::Itype> || RV_PSINSTR<T>;
+concept RV_INSTR =
+    std::same_as<T, RISCV::Rtype> || std::same_as<T, RISCV::Itype> ||
+    std::same_as<T, RISCV::Stype> || std::same_as<T, RISCV::Btype> ||
+    std::same_as<T, RISCV::Utype> || std::same_as<T, RISCV::Jtype> ||
+    std::same_as<T, RISCV::InstructionList> || RV_PSINSTR<T>;
 
 template <RV_INSTR T, typename... Args>
 [[nodiscard]]
