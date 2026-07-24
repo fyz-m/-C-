@@ -2,11 +2,18 @@
 #include "../src/lexer/lexer.hpp"
 #include "IR/IRgen.hpp"
 #include "codegen/codegen.hpp"
+#include "codegen/reg_alloc/register_allocator.hpp"
 #include "codegen/code_emission.hpp"
 #include "parser/parser.hpp"
 #include "IR/IRprinter.hpp"
 #include "../src/codegen/expand_pseudo/expand_pseudo.hpp"
 
+
+std::string removeNewlines(std::string& str) {
+    str.erase(std::remove(str.begin(), str.end(), '\n'), str.end());
+    str.erase(std::remove(str.begin(), str.end(), '\r'), str.end());
+    return str;
+}
 
 using namespace CODEGEN;
 
@@ -57,6 +64,61 @@ INSTANTIATE_TEST_SUITE_P(
     }
 );
 
+struct IR_to_ASM_testcase {
+    std::string testName;
+    std::vector<IR::IRnode> ir_instructions;
+    std::string expected_asm;
+
+    IR_to_ASM_testcase(std::string tname, 
+                       std::initializer_list<std::function<IR::IRnode()>> ir_gen_functions,
+                       std::string expected_asm)
+
+                       : testName{std::move(tname)}, 
+                         expected_asm{std::move(expected_asm)}
+
+                       {
+                        ir_instructions.reserve(ir_gen_functions.size());
+                        for (auto& function : ir_gen_functions)                
+                            ir_instructions.push_back(function());
+                       }
+};
+ 
+class IR_to_ASM_test : public ::testing::TestWithParam<std::shared_ptr<IR_to_ASM_testcase>> {};
+
+TEST_P(IR_to_ASM_test, codegenStackAllocateOnly) {
+
+    auto tc = GetParam();
+    
+    auto cg = CodeGenerator(tc->ir_instructions); 
+    cg.generateRISCVassembly();
+    CODEGEN::RegisterAllocator::varToMem(cg.getInstructions());
+
+    auto actual_asm = CodeEmitter(true).emitAsm(cg.getInstructions());
+    EXPECT_EQ(removeNewlines(actual_asm), tc->expected_asm);
+}
+
+
+INSTANTIATE_TEST_SUITE_P(
+    var_to_stack,
+    IR_to_ASM_test, 
+
+    ::testing::Values(
+
+         std::make_shared<IR_to_ASM_testcase>(
+            "unary_neg",
+            std::initializer_list<std::function<IR::IRnode()>>{
+                [](){ return createIRnode<IR::UnaryNode>("a", IR::OPERATION::NEG, "a"); } // a = - a
+            },
+            "neg sp(0), sp(0)"
+        )
+
+    ),
+
+    [](const ::testing::TestParamInfo<std::shared_ptr<IR_to_ASM_testcase>>& info) {
+        return info.param->testName;
+    }
+);
+
 
 struct PItestCase {
     std::string test_name;
@@ -97,6 +159,14 @@ INSTANTIATE_TEST_SUITE_P(
             // -> addi x1, zero, 2
              [](){ return createInstruction<Itype>(addi, x1, zero, 2); }
             },
+
+        PItestCase{"LI_imm_equal_to_12_bits",
+             // li x1, -2048
+             [](){ return createInstruction<LI>(x1, 2048); },
+            // -> addi x1, zero, -2048
+             [](){ return createInstruction<Itype>(addi, x1, zero, 2048); }
+            },
+
 
         PItestCase{"ret",
              // ret 
