@@ -13,12 +13,12 @@ std::string CodeEmitter::emitAsm(
     EmitAsm visitor(m_PrintABIregs);
 
     for (const auto& instruction : instrucions)
-        s << std::visit(visitor, instruction) << '\n';
+        s << std::visit(visitor, instruction);
     return s.str();
 }
 
 std::string EmitAsm::operator()(const RISCV::RtypePtr& inst) const {
-    return std::format("{} {}, {}, {}",
+    return std::format("{} {}, {}, {}\n",
                        opToStr(inst->Op),
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1),
@@ -26,11 +26,54 @@ std::string EmitAsm::operator()(const RISCV::RtypePtr& inst) const {
 }
 
 std::string EmitAsm::operator()(const RISCV::ItypePtr& inst) const {
-    return std::format("{} {}, {}, {}",
+    if (isLoadInstruction(inst->Op))
+        return std::format("{} {}, {}({})\n",
+                           opToStr(inst->Op),
+                           operandToStr(inst->Rd),
+                           std::to_string(inst->Imm),
+                           operandToStr(inst->Rs1));
+
+    return std::format("{} {}, {}, {}\n",
                        opToStr(inst->Op),
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1),
                        std::to_string(inst->Imm));
+}
+
+std::string EmitAsm::operator()(const RISCV::StypePtr& inst) const {
+    return std::format("{} {}, {}({})\n",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rs2),
+                       std::to_string(inst->Imm),
+                       operandToStr(inst->Rs1));
+}
+
+std::string EmitAsm::operator()(const RISCV::BtypePtr& inst) const {
+    return std::format("{} {}, {}, {}\n",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rs1),
+                       operandToStr(inst->Rs1),
+                       inst->Label);
+}
+std::string EmitAsm::operator()(const RISCV::UtypePtr& inst) const {
+    return std::format("{} {}, {}\n",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rd),
+                       std::to_string(inst->Imm));
+}
+std::string EmitAsm::operator()(const RISCV::JtypePtr& inst) const {
+    return std::format("{} {}, {}\n",
+                       opToStr(inst->Op),
+                       operandToStr(inst->Rd),
+                       inst->Label);
+}
+
+std::string
+EmitAsm::operator()(const RISCV::InstructionListPtr& inst) const {
+    std::stringstream s;
+    for (const auto& instruction : inst->Instructions)
+        s << std::visit(*this, instruction);
+    return s.str();
 }
 
 std::string
@@ -39,28 +82,29 @@ EmitAsm::operator()(const RISCV::PseudoInstrution& inst) const {
 }
 
 std::string EmitAsm::operator()(const RISCV::RetPtr& inst) const {
-    return "ret";
+    return "ret\n";
 }
 
 std::string EmitAsm::operator()(const RISCV::MvPtr& inst) const {
-    return std::format(
-        "mv {}, {}", operandToStr(inst->Rd), operandToStr(inst->Rs1));
+    return std::format("mv {}, {}\n",
+                       operandToStr(inst->Rd),
+                       operandToStr(inst->Rs1));
 }
 
 std::string EmitAsm::operator()(const RISCV::LIPtr& inst) const {
-    return std::format("li {}, {}",
+    return std::format("li {}, {}\n",
                        operandToStr(inst->Rd),
                        std::to_string(inst->Imm));
 }
 
 std::string EmitAsm::operator()(const RISCV::NotPtr& inst) const {
-    return std::format("not {}, {}",
+    return std::format("not {}, {}\n",
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1));
 }
 
 std::string EmitAsm::operator()(const RISCV::NegPtr& inst) const {
-    return std::format("neg {}, {}",
+    return std::format("neg {}, {}\n",
                        operandToStr(inst->Rd),
                        operandToStr(inst->Rs1));
 }
@@ -70,11 +114,23 @@ struct Overloaded : Ts... {
     using Ts::operator()...;
 };
 
+bool EmitAsm::isLoadInstruction(RISCV::OPCODE::I_TYPE opcode) const {
+    using enum RISCV::OPCODE::I_TYPE;
+
+    switch (opcode) {
+    case lw:
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::string EmitAsm::operandToStr(RISCV::Operand& operand) const {
     return std::visit(
         Overloaded{
             [&](RISCV::Stack s) {
-                return std::format("sp+{}", std::to_string(s.Offset));
+                return std::format("sp({})",
+                                   std::to_string(s.Offset));
             },
             [&](std::string& s) { return s; },
             [&](RISCV::REGISTER r) { return regToStr(r); },
@@ -82,8 +138,7 @@ std::string EmitAsm::operandToStr(RISCV::Operand& operand) const {
         operand);
 }
 
-constexpr std::string
-EmitAsm::opToStr(RISCV::OPCODE::I_TYPE opcode) const {
+std::string EmitAsm::opToStr(RISCV::OPCODE::I_TYPE opcode) const {
 
     using enum RISCV::OPCODE::I_TYPE;
 
@@ -94,11 +149,62 @@ EmitAsm::opToStr(RISCV::OPCODE::I_TYPE opcode) const {
         return "subi";
     case xori:
         return "xori";
+    case jalr:
+        return "jalr";
+    case lw:
+        return "lw";
+        break;
     }
 }
 
-constexpr std::string
-EmitAsm::opToStr(RISCV::OPCODE::R_TYPE opcode) const {
+std::string EmitAsm::opToStr(RISCV::OPCODE::S_TYPE opcode) const {
+    using enum RISCV::OPCODE::S_TYPE;
+
+    switch (opcode) {
+    case sb:
+        return "sb";
+    case sw:
+        return "sw";
+    case sh:
+        return "sh";
+        break;
+    }
+}
+
+std::string EmitAsm::opToStr(RISCV::OPCODE::B_TYPE opcode) const {
+    using enum RISCV::OPCODE::B_TYPE;
+
+    switch (opcode) {
+    case beq:
+        return "beq";
+
+        break;
+    }
+}
+
+std::string EmitAsm::opToStr(RISCV::OPCODE::U_TYPE opcode) const {
+    using enum RISCV::OPCODE::U_TYPE;
+
+    switch (opcode) {
+    case lui:
+        return "lui";
+    case auipc:
+        return "auipc";
+        break;
+    }
+}
+
+std::string EmitAsm::opToStr(RISCV::OPCODE::J_TYPE opcode) const {
+    using enum RISCV::OPCODE::J_TYPE;
+
+    switch (opcode) {
+    case jal:
+        return "jal";
+        break;
+    }
+}
+
+std::string EmitAsm::opToStr(RISCV::OPCODE::R_TYPE opcode) const {
 
     using enum RISCV::OPCODE::R_TYPE;
 
@@ -110,8 +216,7 @@ EmitAsm::opToStr(RISCV::OPCODE::R_TYPE opcode) const {
     }
 }
 
-constexpr std::string
-EmitAsm::regToStr(const RISCV::REGISTER reg) const {
+std::string EmitAsm::regToStr(const RISCV::REGISTER reg) const {
 
     if (!m_PrintABIregs)
         return std::format("x{}",
