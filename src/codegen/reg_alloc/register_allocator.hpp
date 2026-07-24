@@ -8,20 +8,33 @@ namespace CODEGEN {
 class RegisterAllocator {
 
   public:
-    static void varToMem(RiscvInstructions& instructions);
+    // Assigns all variables a place on the stack, returns stack size
+
+    static size_t varToMem(RiscvInstructions& instructions);
+
+    // RISC-V instructions can't act on memory addresses directly,
+    // so we need to load the stack operand into a register first
+    static void fixInstructions(RiscvInstructions& instructions);
+
+  private:
+    static void fixInstruction(RISCV::Instruction& instruction);
 };
 
 // Assigns all variables a place on the stack
 struct StackAllocator {
 
-    // so first stack offset is 0
-    int StackOffset = -4;
+    size_t StackOffset{};
     std::unordered_map<std::string, RISCV::Stack> Map;
 
-    void allocateRegs(RiscvInstructions& instructions);
+    void varToStack(RiscvInstructions& instructions);
 
-    void operator()(const RISCV::ItypePtr& inst);
     void operator()(const RISCV::RtypePtr& inst);
+    void operator()(const RISCV::ItypePtr& inst);
+    void operator()(const RISCV::StypePtr& inst);
+    void operator()(const RISCV::BtypePtr& inst);
+    void operator()(const RISCV::UtypePtr& inst);
+    void operator()(const RISCV::JtypePtr& inst);
+
     void operator()(const RISCV::InstructionListPtr& inst);
 
     void operator()(const RISCV::PseudoInstrution& inst);
