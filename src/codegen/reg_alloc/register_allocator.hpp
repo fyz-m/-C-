@@ -8,14 +8,12 @@ namespace CODEGEN {
 class RegisterAllocator {
 
   public:
-    RegisterAllocator();
-
-    // Place all variables onto the stack
     static void varToMem(RiscvInstructions& instructions);
 };
 
-// Naive allocator, spills everything to the stack
-struct NaiveAllocator {
+// Assigns all variables a place on the stack
+struct StackAllocator {
+
     // so first stack offset is 0
     int StackOffset = -4;
     std::unordered_map<std::string, RISCV::Stack> Map;
@@ -24,14 +22,16 @@ struct NaiveAllocator {
 
     void operator()(const RISCV::ItypePtr& inst);
     void operator()(const RISCV::RtypePtr& inst);
+    void operator()(const RISCV::InstructionListPtr& inst);
 
-    void operator()(const RISCV::PseudoInstrution&);
-    // void operator()(const RISCV::RetPtr& inst) const;
-    // void operator()(const RISCV::MvPtr& inst) const;
-    // void operator()(const RISCV::LIPtr& inst) const;
-    // void operator()(const RISCV::NotPtr& inst) const;
-    // void operator()(const RISCV::NegPtr& inst) const;
+    void operator()(const RISCV::PseudoInstrution& inst);
+    void operator()(const RISCV::RetPtr& inst);
+    void operator()(const RISCV::MvPtr& inst);
+    void operator()(const RISCV::LIPtr& inst);
+    void operator()(const RISCV::NotPtr& inst);
+    void operator()(const RISCV::NegPtr& inst);
 
+  private:
     void assignStackToVar(RISCV::Operand& operand);
 };
 

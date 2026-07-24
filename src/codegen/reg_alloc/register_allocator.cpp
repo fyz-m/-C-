@@ -3,32 +3,57 @@
 namespace CODEGEN {
 
 void RegisterAllocator::varToMem(RiscvInstructions& instructions) {
-    NaiveAllocator allocator;
+    StackAllocator allocator;
     allocator.allocateRegs(instructions);
 }
 
-void NaiveAllocator::allocateRegs(RiscvInstructions& instructions) {
+void StackAllocator::allocateRegs(RiscvInstructions& instructions) {
     for (const auto& instruction : instructions)
         std::visit(*this, instruction);
 }
 
-void NaiveAllocator::operator()(const RISCV::ItypePtr& inst) {
+void StackAllocator::operator()(const RISCV::ItypePtr& inst) {
     assignStackToVar(inst->Rd);
     assignStackToVar(inst->Rs1);
 }
 
-void NaiveAllocator::operator()(const RISCV::RtypePtr& inst) {
+void StackAllocator::operator()(const RISCV::RtypePtr& inst) {
     assignStackToVar(inst->Rd);
     assignStackToVar(inst->Rs1);
     assignStackToVar(inst->Rs2);
 }
 
-void NaiveAllocator::operator()(const RISCV::PseudoInstrution&) {
-    throw std::runtime_error(
-        "Attempt to allocate register to pseudo instruction.");
+void StackAllocator::operator()(
+    const RISCV::InstructionListPtr& inst) {
+    allocateRegs(inst->Instructions);
 }
 
-void NaiveAllocator::assignStackToVar(RISCV::Operand& operand) {
+void StackAllocator::operator()(const RISCV::PseudoInstrution& inst) {
+    std::visit(*this, inst);
+}
+
+void StackAllocator::operator()(const RISCV::RetPtr&) {}
+
+void StackAllocator::operator()(const RISCV::MvPtr& inst) {
+    assignStackToVar(inst->Rd);
+    assignStackToVar(inst->Rs1);
+}
+
+void StackAllocator::operator()(const RISCV::LIPtr& inst) {
+    assignStackToVar(inst->Rd);
+}
+
+void StackAllocator::operator()(const RISCV::NotPtr& inst) {
+    assignStackToVar(inst->Rd);
+    assignStackToVar(inst->Rs1);
+}
+
+void StackAllocator::operator()(const RISCV::NegPtr& inst) {
+    assignStackToVar(inst->Rd);
+    assignStackToVar(inst->Rs1);
+}
+
+void StackAllocator::assignStackToVar(RISCV::Operand& operand) {
 
     auto* var = std::get_if<IR::Variable>(&operand);
     if (!var)
