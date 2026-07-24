@@ -13,6 +13,7 @@ using Statements = std::expected<std::vector<StmtNodePtr>, bool>;
 class Parser {
 
   private:
+    bool m_HadError{false};
     std::vector<Token> m_Tokens;
     size_t m_Current{0};
 

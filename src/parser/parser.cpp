@@ -12,6 +12,8 @@ Statements Parser::Parse() {
         if (auto result = parseDeclaration())
             statements.push_back(std::move(result.value()));
 
+    if (m_HadError)
+        return std::unexpected<bool>(false);
     return statements;
 }
 
@@ -223,6 +225,7 @@ ExprNodePtr Parser::parseInfixExpr(ExprNodePtr leftNode) {
                 std::get_if<IdentifierExprPtr>(&leftNode)) {
             advance();
             auto rightExpr = parseExpr(getBindingPower(EQUAL));
+
             return createAstNode<AssignmentExpr>(
                 std::move(*identifierNode), std::move(rightExpr));
         }
@@ -326,6 +329,7 @@ void Parser::reportError(Token& token,
 
     Diagnostics::DiagnosticsEngine::report(*err_tok,
                                            std::move(errorMessage));
+    m_HadError = true;
     if (recover)
         throw ParseError();
 }
