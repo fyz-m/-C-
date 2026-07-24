@@ -123,10 +123,14 @@ enum class REGISTER : std::uint8_t {
 
 namespace OPCODE {
 enum class R_TYPE : std::uint8_t { add, sub };
-enum class I_TYPE : std::uint8_t { addi, subi, xori };
-enum class J_TYPE : std::uint8_t { jal, jalr };
+enum class I_TYPE : std::uint8_t { addi, subi, xori, jalr };
+enum class J_TYPE : std::uint8_t { jal };
 enum class S_TYPE : std::uint8_t { beq };
 }; // namespace OPCODE
+
+/////////////////////////
+// Pseudo-instructions //
+/////////////////////////
 
 struct RET;
 struct MV;
@@ -143,15 +147,6 @@ using NegPtr = std::unique_ptr<NEG>;
 using PseudoInstrution =
     std::variant<RetPtr, MvPtr, NotPtr, NegPtr, LIPtr>;
 
-struct Rtype;
-struct Itype;
-
-using RtypePtr = std::unique_ptr<Rtype>;
-using ItypePtr = std::unique_ptr<Itype>;
-
-using Instruction =
-    std::variant<RtypePtr, ItypePtr, PseudoInstrution>;
-
 struct Stack {
     int Offset;
 };
@@ -163,24 +158,6 @@ struct Stack {
 // We progressively lower the Operand variant through a series of
 // passes until we only have registers.
 using Operand = std::variant<IR::Variable, Stack, REGISTER>;
-
-struct Rtype {
-    OPCODE::R_TYPE Op;
-    Operand Rd;
-    Operand Rs1;
-    Operand Rs2;
-};
-
-struct Itype {
-    OPCODE::I_TYPE Op;
-    Operand Rd;
-    Operand Rs1;
-    i32 Imm;
-};
-
-/////////////////////////
-// Pseudo-instructions //
-/////////////////////////
 
 // return from function
 struct RET {};
@@ -207,4 +184,42 @@ struct NOT {
     Operand Rs1;
 };
 
+/////////////////////////
+// RISC-V Instructions //
+/////////////////////////
+
+struct Rtype;
+struct Itype;
+struct InstructionList;
+
+using RtypePtr = std::unique_ptr<Rtype>;
+using ItypePtr = std::unique_ptr<Itype>;
+using InstructionListPtr = std::unique_ptr<InstructionList>;
+
+using Instruction = std::
+    variant<RtypePtr, ItypePtr, InstructionListPtr, PseudoInstrution>;
+
+struct Rtype {
+    OPCODE::R_TYPE Op;
+    Operand Rd;
+    Operand Rs1;
+    Operand Rs2;
+};
+
+struct Itype {
+    OPCODE::I_TYPE Op;
+    Operand Rd;
+    Operand Rs1;
+    i32 Imm;
+};
+
+// Later passes in the compiler like register allocation and
+// pseudo-instruction translation usually replace one instruction with
+// 2 or more, this struct is used by those passes instead of inserting
+// in the Instructions vector (outputted by codegen) which would be
+// very slow since vector will be resizing and shifting elements
+// frequently
+struct InstructionList {
+    std::vector<Instruction> Instructions;
+};
 } // namespace RISCV
